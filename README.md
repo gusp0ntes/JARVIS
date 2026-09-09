@@ -49,8 +49,13 @@ Ao desativar o perfil, o app tenta desconectar a VPN configurada e encerrar os p
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/home.png" alt="Tela inicial do JARVIS" width="360" />
-  <img src="docs/screenshots/image.png" alt="Configurações de notificações do JARVIS" width="360" />
+  <img src="docs/screenshots/home.png" alt="Tela inicial do JARVIS" width="320" />
+  <img src="docs/screenshots/settings-overview.png" alt="Configurações de perfil e aplicativos do JARVIS" width="320" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/settings-routine.png" alt="Configuração de rotina do JARVIS" width="320" />
+  <img src="docs/screenshots/settings-notifications.png" alt="Configurações de notificações do JARVIS" width="320" />
 </p>
 
 ## Arquitetura
@@ -221,7 +226,7 @@ Os testes unitários atuais cobrem:
 - [ ] Suporte a múltiplos perfis.
 - [ ] Importação e exportação de configurações.
 - [ ] Ícone próprio para o executável e instalador.
-- [ ] Screenshots versionadas da interface.
+- [x] Screenshots versionadas da interface.
 - [ ] Testes de integração para fluxos Electron/IPC.
 - [ ] Atualização automática.
 
