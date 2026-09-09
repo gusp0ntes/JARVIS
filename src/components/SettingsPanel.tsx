@@ -10,6 +10,7 @@ import type {
 } from "../types";
 import { validateCounterSchedule } from "../time";
 import { NotificationMessageEditor } from "./NotificationMessageEditor";
+import { ToggleSwitch } from "./ToggleSwitch";
 
 const notificationEditors: Array<{
   key: CounterEventKey;
@@ -240,12 +241,11 @@ export function SettingsPanel({
               <h3>Navegador</h3>
             </div>
 
-            <button
-              className={`mini-toggle ${config.browser.enabled ? "active" : ""}`}
-              onClick={() => onBrowserEnabledChange(!config.browser.enabled)}
-            >
-              <span />
-            </button>
+            <ToggleSwitch
+              checked={config.browser.enabled}
+              label="Ativar navegador"
+              onChange={onBrowserEnabledChange}
+            />
           </div>
 
           <p className="card-description">Abra automaticamente um navegador e uma URL ao iniciar.</p>
@@ -286,12 +286,11 @@ export function SettingsPanel({
               <h3>VPN</h3>
             </div>
 
-            <button
-              className={`mini-toggle ${config.vpn.enabled ? "active" : ""}`}
-              onClick={() => onVpnEnabledChange(!config.vpn.enabled)}
-            >
-              <span />
-            </button>
+            <ToggleSwitch
+              checked={config.vpn.enabled}
+              label="Ativar VPN"
+              onChange={onVpnEnabledChange}
+            />
           </div>
 
           <p className="card-description">
@@ -331,12 +330,11 @@ export function SettingsPanel({
               <h3>Rotina</h3>
             </div>
 
-            <button
-              className={`mini-toggle ${config.counterTime.enabled ? "active" : ""}`}
-              onClick={() => onCounterEnabledChange(!config.counterTime.enabled)}
-            >
-              <span />
-            </button>
+            <ToggleSwitch
+              checked={config.counterTime.enabled}
+              label="Ativar rotina"
+              onChange={onCounterEnabledChange}
+            />
           </div>
 
           <p className="card-description">
@@ -350,12 +348,11 @@ export function SettingsPanel({
               <span>Use quando a rotina tiver um intervalo no meio.</span>
             </div>
 
-            <button
-              className={`mini-toggle ${config.counterTime.breakEnabled ? "active" : ""}`}
-              onClick={() => onCounterBreakEnabledChange(!config.counterTime.breakEnabled)}
-            >
-              <span />
-            </button>
+            <ToggleSwitch
+              checked={config.counterTime.breakEnabled}
+              label="Ativar pausa intermediária"
+              onChange={onCounterBreakEnabledChange}
+            />
           </div>
 
           <div className="schedule-grid">
@@ -432,14 +429,11 @@ export function SettingsPanel({
               <h3>Notificações</h3>
             </div>
 
-            <button
-              className={`mini-toggle ${config.counterTime.notifications.enabled ? "active" : ""}`}
-              onClick={() =>
-                onNotificationsEnabledChange(!config.counterTime.notifications.enabled)
-              }
-            >
-              <span />
-            </button>
+            <ToggleSwitch
+              checked={config.counterTime.notifications.enabled}
+              label="Ativar notificações"
+              onChange={onNotificationsEnabledChange}
+            />
           </div>
 
           <p className="card-description">Alertas personalizados para cada etapa da rotina.</p>
@@ -451,12 +445,11 @@ export function SettingsPanel({
                 <span>Reproduzir um aviso sonoro.</span>
               </div>
 
-              <button
-                className={`mini-toggle ${config.counterTime.notifications.sound ? "active" : ""}`}
-                onClick={() => onNotificationSoundChange(!config.counterTime.notifications.sound)}
-              >
-                <span />
-              </button>
+              <ToggleSwitch
+                checked={config.counterTime.notifications.sound}
+                label="Ativar som das notificações"
+                onChange={onNotificationSoundChange}
+              />
             </div>
           </div>
 

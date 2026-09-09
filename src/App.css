@@ -61,11 +61,9 @@ button {
   color: #ffffff;
 
   background:
-    linear-gradient(
-      145deg,
+    linear-gradient(145deg,
       #151515 0%,
-      #0d0d0d 100%
-    );
+      #0d0d0d 100%);
 
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
@@ -360,7 +358,7 @@ button {
   margin-top: 8px;
 }
 
-.summary > div {
+.summary>div {
   min-width: 90px;
 
   padding: 13px 15px;
@@ -372,11 +370,11 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.summary > div:first-child {
+.summary>div:first-child {
   border-radius: 10px 0 0 10px;
 }
 
-.summary > div:last-child {
+.summary>div:last-child {
   border-radius: 0 10px 10px 0;
 }
 
@@ -411,11 +409,9 @@ button {
   border-radius: 15px;
 
   background:
-    linear-gradient(
-      145deg,
+    linear-gradient(145deg,
       rgba(255, 255, 255, 0.055),
-      rgba(255, 255, 255, 0.018)
-    );
+      rgba(255, 255, 255, 0.018));
 
   box-shadow:
     0 12px 30px rgba(0, 0, 0, 0.18);
@@ -447,7 +443,7 @@ button {
   justify-content: space-between;
 }
 
-.counter-header > div {
+.counter-header>div {
   min-width: 0;
 }
 
@@ -519,11 +515,9 @@ button {
   border-radius: 6px;
 
   background:
-    linear-gradient(
-      180deg,
+    linear-gradient(180deg,
       #252527 0%,
-      #171719 100%
-    );
+      #171719 100%);
 
   border: 1px solid rgba(255, 255, 255, 0.06);
 
@@ -559,6 +553,7 @@ button {
 }
 
 @keyframes blinkCounter {
+
   0%,
   45% {
     opacity: 0.25;
@@ -629,11 +624,9 @@ button {
   flex-direction: column;
 
   background:
-    linear-gradient(
-      145deg,
+    linear-gradient(145deg,
       #151515 0%,
-      #0b0b0b 100%
-    );
+      #0b0b0b 100%);
 
   animation:
     settingsIn 0.2s ease;
@@ -762,7 +755,7 @@ button {
   justify-content: space-between;
 }
 
-.card-heading > div {
+.card-heading>div {
   display: flex;
   align-items: center;
 
@@ -810,46 +803,58 @@ button {
 }
 
 /* ==========================================================================
-   MINI TOGGLE
+   STATE TOGGLE
    ========================================================================== */
 
-.mini-toggle {
-  width: 42px;
-  height: 24px;
+.state-toggle {
+  min-width: 46px;
+  height: 26px;
 
-  padding: 3px;
+  flex: 0 0 auto;
 
-  border: 0;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-  background: #303034;
+  padding: 0 10px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  background: #252527;
+  color: rgba(255, 255, 255, 0.45);
 
   cursor: pointer;
 
-  transition: 0.2s;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.mini-toggle span {
-  display: block;
-
-  width: 18px;
-  height: 18px;
-
-  border-radius: 50%;
+.state-toggle.active {
+  border-color: #ffffff;
 
   background: #ffffff;
-
-  transition: 0.2s;
+  color: #111111;
 }
 
-.mini-toggle.active {
-  background: #ffffff;
+.state-toggle:focus {
+  outline: none;
 }
 
-.mini-toggle.active span {
-  transform: translateX(18px);
-
-  background: #111111;
+.state-toggle:focus-visible {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.14);
 }
 
 /* ==========================================================================
@@ -1281,6 +1286,7 @@ select.field {
   border-radius: 9px;
 
   background: rgba(255, 255, 255, 0.025);
+
 }
 
 .notification-option strong {
@@ -1479,11 +1485,9 @@ select.field {
   border-radius: 17px;
 
   background:
-    linear-gradient(
-      145deg,
+    linear-gradient(145deg,
       rgba(25, 25, 25, 0.98),
-      rgba(10, 10, 10, 0.98)
-    );
+      rgba(10, 10, 10, 0.98));
 
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.55),
