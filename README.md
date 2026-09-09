@@ -232,8 +232,4 @@ Os testes unitários atuais cobrem:
 
 ## Autor
 
-Gustavo Pontes
-
-## Licença
-
-Este repositório ainda não possui uma licença definida.
+Gustavo Pontes da Silva
