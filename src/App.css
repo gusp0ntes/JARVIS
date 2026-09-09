@@ -1,0 +1,1709 @@
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+
+  color: #ffffff;
+  background: transparent;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-app-region: no-drag;
+}
+
+/* ==========================================================================
+   JARVIS
+   ========================================================================== */
+
+.jarvis {
+  position: relative;
+
+  width: 100vw;
+  height: 100vh;
+
+  overflow: hidden;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      145deg,
+      #151515 0%,
+      #0d0d0d 100%
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 24px;
+
+  -webkit-app-region: drag;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.brand-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+
+  letter-spacing: 4px;
+
+  opacity: 0.9;
+}
+
+.settings-button {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  color: #ffffff;
+
+  font-size: 18px;
+
+  cursor: pointer;
+
+  opacity: 0.7;
+
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
+
+  -webkit-app-region: no-drag;
+}
+
+.settings-button:hover {
+  opacity: 1;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  transform: rotate(20deg);
+}
+
+/* ==========================================================================
+   MAIN CONTENT
+   ========================================================================== */
+
+.content {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 18px;
+
+  padding: 75px 24px 20px;
+}
+
+/* ==========================================================================
+   MODE
+   ========================================================================== */
+
+.mode {
+  text-align: center;
+
+  margin-bottom: 4px;
+}
+
+.mode-label {
+  display: block;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  letter-spacing: 3px;
+
+  opacity: 0.4;
+}
+
+.mode h1 {
+  margin: 8px 0 6px;
+
+  font-size: 30px;
+  font-weight: 600;
+
+  letter-spacing: 5px;
+}
+
+.mode-description {
+  font-size: 13px;
+  line-height: 1.5;
+
+  color: #ffffff;
+
+  opacity: 0.4;
+}
+
+/* ==========================================================================
+   MAIN TOGGLE
+   ========================================================================== */
+
+.toggle {
+  width: 88px;
+  height: 50px;
+
+  padding: 5px;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: #303034;
+
+  cursor: pointer;
+
+  transition:
+    background 0.3s ease,
+    transform 0.2s ease;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.toggle:hover {
+  background: #3a3a3e;
+}
+
+.toggle:active {
+  transform: scale(0.97);
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.toggle.active {
+  background: #ffffff;
+}
+
+.toggle-circle {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  color: #111111;
+
+  font-size: 15px;
+
+  transition: transform 0.3s ease;
+
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.toggle.active .toggle-circle {
+  transform: translateX(38px);
+}
+
+/* ==========================================================================
+   STATUS
+   ========================================================================== */
+
+.status {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  letter-spacing: 1.5px;
+
+  opacity: 0.35;
+}
+
+.status.active {
+  opacity: 0.9;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+}
+
+.run-report {
+  width: min(340px, 100%);
+
+  display: grid;
+
+  gap: 5px;
+
+  padding: 10px 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  text-align: left;
+}
+
+.run-report strong {
+  font-size: 10px;
+  font-weight: 600;
+
+  letter-spacing: 1px;
+
+  opacity: 0.65;
+}
+
+.run-report span {
+  font-size: 10px;
+  line-height: 1.35;
+
+  opacity: 0.42;
+}
+
+/* ==========================================================================
+   SUMMARY
+   ========================================================================== */
+
+.summary {
+  display: flex;
+  align-items: center;
+
+  gap: 1px;
+
+  margin-top: 8px;
+}
+
+.summary > div {
+  min-width: 90px;
+
+  padding: 13px 15px;
+
+  text-align: center;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.summary > div:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.summary > div:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.summary strong {
+  display: block;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.summary span {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 10px;
+  letter-spacing: 0.5px;
+
+  opacity: 0.4;
+}
+
+/* ==========================================================================
+   COUNTER TIME
+   ========================================================================== */
+
+.counter-time {
+  width: min(340px, 100%);
+
+  padding: 16px 17px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 15px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.018)
+    );
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.18);
+
+  animation:
+    counterIn 0.35s ease;
+}
+
+@keyframes counterIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.counter-time.disabled {
+  opacity: 0.35;
+}
+
+.counter-header {
+  display: flex;
+  align-items: center;
+
+  justify-content: space-between;
+}
+
+.counter-header > div {
+  min-width: 0;
+}
+
+.counter-label {
+  display: block;
+
+  font-size: 9px;
+  font-weight: 500;
+
+  letter-spacing: 2px;
+
+  opacity: 0.35;
+}
+
+.counter-header strong {
+  display: block;
+
+  margin-top: 5px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  letter-spacing: 0.4px;
+
+  opacity: 0.9;
+}
+
+.counter-state {
+  padding: 6px 8px;
+
+  border-radius: 6px;
+
+  background: rgba(255, 255, 255, 0.06);
+
+  font-size: 9px;
+  font-weight: 500;
+
+  letter-spacing: 1px;
+
+  opacity: 0.55;
+}
+
+.counter-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  margin: 12px 0 10px;
+
+  font-family:
+    "Segoe UI",
+    monospace;
+
+  font-variant-numeric: tabular-nums;
+
+  letter-spacing: 1px;
+}
+
+.counter-digit {
+  min-width: 29px;
+  height: 35px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 6px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #252527 0%,
+      #171719 100%
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  font-size: 18px;
+  font-weight: 600;
+
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.03);
+
+  animation:
+    digitFlip 0.25s ease;
+}
+
+@keyframes digitFlip {
+  from {
+    transform: translateY(-2px);
+    opacity: 0.5;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.counter-separator {
+  font-size: 16px;
+
+  opacity: 0.4;
+
+  animation:
+    blinkCounter 1s infinite;
+}
+
+@keyframes blinkCounter {
+  0%,
+  45% {
+    opacity: 0.25;
+  }
+
+  50%,
+  100% {
+    opacity: 0.7;
+  }
+}
+
+.counter-progress {
+  width: 100%;
+  height: 4px;
+
+  overflow: hidden;
+
+  border-radius: 99px;
+
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.counter-progress span {
+  display: block;
+
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: rgba(255, 255, 255, 0.75);
+
+  transition: width 1s linear;
+}
+
+.counter-footer {
+  display: flex;
+  justify-content: space-between;
+
+  margin-top: 8px;
+
+  font-size: 9px;
+
+  letter-spacing: 0.6px;
+}
+
+.counter-footer span {
+  opacity: 0.3;
+}
+
+.counter-footer strong {
+  font-size: 10px;
+  font-weight: 500;
+
+  opacity: 0.55;
+}
+
+/* ==========================================================================
+   SETTINGS
+   ========================================================================== */
+
+.settings {
+  position: absolute;
+  inset: 0;
+
+  z-index: 10;
+
+  display: flex;
+  flex-direction: column;
+
+  background:
+    linear-gradient(
+      145deg,
+      #151515 0%,
+      #0b0b0b 100%
+    );
+
+  animation:
+    settingsIn 0.2s ease;
+}
+
+@keyframes settingsIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   SETTINGS HEADER
+   ========================================================================== */
+
+.settings-top {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  padding: 24px 24px 18px;
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+
+  letter-spacing: 3px;
+
+  opacity: 0.35;
+}
+
+.settings-top h2 {
+  margin: 6px 0 0;
+
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.close-button {
+  width: 36px;
+  height: 36px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  color: #ffffff;
+
+  font-size: 20px;
+
+  cursor: pointer;
+
+  opacity: 0.65;
+
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.close-button:hover {
+  opacity: 1;
+
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   SETTINGS CONTENT
+   ========================================================================== */
+
+.settings-content {
+  flex: 1;
+
+  overflow-y: auto;
+
+  padding: 20px 24px 90px;
+}
+
+.settings-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background: #303034;
+  border-radius: 99px;
+}
+
+/* ==========================================================================
+   CONFIG CARD
+   ========================================================================== */
+
+.config-card {
+  padding: 17px;
+
+  margin-bottom: 13px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.06);
+
+  border-radius: 15px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-heading > div {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.card-eyebrow {
+  font-size: 9px;
+  letter-spacing: 1px;
+
+  opacity: 0.3;
+}
+
+.card-heading h3 {
+  margin: 0;
+
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.card-description {
+  margin: 9px 0 16px;
+
+  font-size: 11px;
+  line-height: 1.55;
+
+  opacity: 0.4;
+}
+
+.counter {
+  min-width: 26px;
+  height: 26px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.06);
+
+  font-size: 10px;
+
+  opacity: 0.7;
+}
+
+/* ==========================================================================
+   MINI TOGGLE
+   ========================================================================== */
+
+.mini-toggle {
+  width: 42px;
+  height: 24px;
+
+  padding: 3px;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: #303034;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.mini-toggle span {
+  display: block;
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  transition: 0.2s;
+}
+
+.mini-toggle.active {
+  background: #ffffff;
+}
+
+.mini-toggle.active span {
+  transform: translateX(18px);
+
+  background: #111111;
+}
+
+/* ==========================================================================
+   APPLICATIONS
+   ========================================================================== */
+
+.application-list {
+  margin-bottom: 10px;
+}
+
+.application {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 10px;
+
+  margin-bottom: 7px;
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.application-info {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.application-icon {
+  width: 31px;
+  height: 31px;
+
+  flex-shrink: 0;
+
+  object-fit: contain;
+}
+
+.application-icon-placeholder {
+  width: 31px;
+  height: 31px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 7px;
+
+  background: #303034;
+
+  font-size: 8px;
+
+  opacity: 0.6;
+}
+
+.application-text {
+  min-width: 0;
+}
+
+.application-text strong {
+  display: block;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.application-text small {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 9px;
+
+  opacity: 0.35;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.remove-button {
+  width: 28px;
+  height: 28px;
+
+  flex-shrink: 0;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  opacity: 0.45;
+
+  transition: 0.2s;
+}
+
+.remove-button:hover {
+  opacity: 1;
+
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+.application-actions {
+  display: flex;
+
+  gap: 7px;
+}
+
+.secondary-button {
+  flex: 1;
+
+  padding: 10px 11px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+}
+
+.secondary-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.secondary-button:active {
+  transform: scale(0.98);
+}
+
+.secondary-button:disabled {
+  opacity: 0.3;
+
+  cursor: default;
+}
+
+.secondary-button.full {
+  width: 100%;
+
+  margin-top: 8px;
+}
+
+/* ==========================================================================
+   DETECTED APPLICATIONS
+   ========================================================================== */
+
+.detected {
+  margin-top: 16px;
+}
+
+.detected-title {
+  margin-bottom: 8px;
+
+  font-size: 10px;
+  font-weight: 500;
+
+  letter-spacing: 1px;
+
+  text-transform: uppercase;
+
+  opacity: 0.35;
+}
+
+.detected-list {
+  max-height: 160px;
+
+  overflow-y: auto;
+}
+
+.detected-item {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 8px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  transition: 0.15s;
+}
+
+.detected-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.detected-item:disabled {
+  opacity: 0.35;
+
+  cursor: default;
+}
+
+.detected-item img {
+  width: 24px;
+  height: 24px;
+
+  object-fit: contain;
+}
+
+.detected-item span {
+  flex: 1;
+
+  font-size: 11px;
+}
+
+.detected-item strong {
+  font-size: 14px;
+
+  opacity: 0.5;
+}
+
+/* ==========================================================================
+   INPUTS
+   ========================================================================== */
+
+.field-label {
+  display: block;
+
+  margin: 13px 0 7px;
+
+  font-size: 10px;
+  font-weight: 500;
+
+  letter-spacing: 0.5px;
+
+  opacity: 0.45;
+}
+
+.field {
+  width: 100%;
+
+  min-height: 40px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 9px;
+
+  outline: none;
+
+  background: #19191b;
+
+  color: #ffffff;
+
+  font-size: 12px;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.field:focus {
+  border-color:
+    rgba(255, 255, 255, 0.2);
+
+  background: #1d1d20;
+}
+
+.field::placeholder {
+  color: #ffffff;
+
+  opacity: 0.25;
+}
+
+select.field {
+  cursor: pointer;
+}
+
+.path-preview {
+  margin-top: 8px;
+
+  padding: 8px 10px;
+
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  font-size: 9px;
+
+  opacity: 0.3;
+
+  word-break: break-all;
+}
+
+.field-warning {
+  margin-top: 9px;
+
+  padding: 9px 10px;
+
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  font-size: 10px;
+  line-height: 1.4;
+
+  opacity: 0.65;
+}
+
+/* ==========================================================================
+   EMPTY
+   ========================================================================== */
+
+.empty {
+  padding: 15px;
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  text-align: center;
+
+  font-size: 11px;
+
+  opacity: 0.35;
+}
+
+/* ==========================================================================
+   COUNTERTIME SETTINGS
+   ========================================================================== */
+
+.schedule-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 9px;
+}
+
+.schedule-grid .field {
+  min-height: 38px;
+
+  padding: 0 10px;
+}
+
+.schedule-preview {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 12px;
+
+  padding: 11px;
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.schedule-preview span {
+  font-size: 10px;
+  font-weight: 600;
+
+  opacity: 0.55;
+}
+
+.schedule-preview i {
+  flex: 1;
+
+  height: 1px;
+
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   NOTIFICATION SETTINGS
+   ========================================================================== */
+
+.notification-options {
+  margin-bottom: 9px;
+}
+
+.notification-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 11px;
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.notification-option strong {
+  display: block;
+
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.notification-option span {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 9px;
+
+  line-height: 1.4;
+
+  opacity: 0.35;
+}
+
+.message-config {
+  margin-top: 15px;
+}
+
+.message-editor {
+  padding: 11px;
+
+  margin-bottom: 9px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.04);
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.message-editor-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 8px;
+}
+
+.message-editor-top label {
+  font-size: 10px;
+  font-weight: 600;
+
+  opacity: 0.55;
+}
+
+.test-notification-button {
+  padding: 6px 9px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: #ffffff;
+
+  font-size: 9px;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.test-notification-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.message-input {
+  margin-top: 7px;
+}
+
+/* ==========================================================================
+   SETTINGS FOOTER
+   ========================================================================== */
+
+.settings-footer {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  display: flex;
+
+  gap: 9px;
+
+  padding: 14px 24px;
+
+  border-top:
+    1px solid rgba(255, 255, 255, 0.06);
+
+  background: rgba(12, 12, 12, 0.96);
+
+  backdrop-filter: blur(12px);
+}
+
+.cancel-button,
+.save-button {
+  height: 42px;
+
+  border-radius: 9px;
+
+  cursor: pointer;
+
+  font-size: 11px;
+
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+}
+
+.cancel-button {
+  width: 105px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(255, 255, 255, 0.03);
+
+  color: #ffffff;
+}
+
+.cancel-button:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.save-button {
+  flex: 1;
+
+  border: 0;
+
+  background: #ffffff;
+
+  color: #111111;
+
+  font-weight: 600;
+}
+
+.save-button:hover {
+  background: #e5e5e5;
+}
+
+.cancel-button:active,
+.save-button:active {
+  transform: scale(0.98);
+}
+
+.save-button:disabled {
+  opacity: 0.5;
+
+  cursor: default;
+}
+
+/* ==========================================================================
+   NOTIFICATION WINDOW
+   ========================================================================== */
+
+.notification-shell {
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: flex-end;
+
+  padding: 4px;
+
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+.notification-card {
+  width: 100%;
+  height: 100%;
+
+  position: relative;
+
+  padding: 16px 17px 14px;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.1);
+
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 25, 25, 0.98),
+      rgba(10, 10, 10, 0.98)
+    );
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.55),
+    inset 0 1px rgba(255, 255, 255, 0.03);
+
+  transform:
+    translateX(calc(100% + 30px));
+
+  opacity: 0;
+
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+}
+
+.notification-visible .notification-card {
+  transform: translateX(0);
+
+  opacity: 1;
+}
+
+/* ==========================================================================
+   NOTIFICATION HEADER
+   ========================================================================== */
+
+.notification-top {
+  display: flex;
+  align-items: center;
+
+  justify-content: space-between;
+}
+
+.notification-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 2.5px;
+
+  opacity: 0.75;
+}
+
+.notification-brand-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+.notification-time {
+  font-size: 9px;
+
+  font-variant-numeric: tabular-nums;
+
+  opacity: 0.3;
+}
+
+/* ==========================================================================
+   NOTIFICATION BODY
+   ========================================================================== */
+
+.notification-body {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin-top: 14px;
+}
+
+.notification-icon {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.045);
+
+  font-size: 17px;
+
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.notification-copy {
+  min-width: 0;
+
+  flex: 1;
+}
+
+.notification-eyebrow {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 8px;
+
+  letter-spacing: 1.5px;
+
+  opacity: 0.3;
+}
+
+.notification-copy strong {
+  display: block;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  letter-spacing: 0.2px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-copy p {
+  margin: 5px 0 0;
+
+  font-size: 10px;
+  line-height: 1.4;
+
+  opacity: 0.42;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-close {
+  width: 25px;
+  height: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: #ffffff;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  opacity: 0.35;
+
+  pointer-events: auto;
+
+  transition: 0.2s;
+}
+
+.notification-close:hover {
+  opacity: 1;
+
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   NOTIFICATION PROGRESS
+   ========================================================================== */
+
+.notification-progress {
+  position: absolute;
+
+  left: 16px;
+  right: 16px;
+  bottom: 9px;
+
+  height: 2px;
+
+  overflow: hidden;
+
+  border-radius: 99px;
+
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notification-progress span {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  transform-origin: left center;
+
+  background: rgba(255, 255, 255, 0.55);
+
+  animation:
+    notificationTimer linear forwards;
+}
+
+@keyframes notificationTimer {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
