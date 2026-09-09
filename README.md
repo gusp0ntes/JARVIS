@@ -48,7 +48,10 @@ Ao desativar o perfil, o app tenta desconectar a VPN configurada e encerrar os p
 
 ## Screenshots
 
-Ainda não há screenshots versionadas no repositório. O diretório `docs/screenshots/` está reservado para capturas futuras da interface.
+<p align="center">
+  <img src="docs/screenshots/home.png" alt="Tela inicial do JARVIS" width="360" />
+  <img src="docs/screenshots/image.png" alt="Configurações de notificações do JARVIS" width="360" />
+</p>
 
 ## Arquitetura
 
