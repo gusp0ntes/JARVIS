@@ -19,6 +19,7 @@ describe("normalizeConfig", () => {
     });
 
     expect(config.profile).toEqual(defaultConfig.profile);
+    expect(config.appearance).toEqual(defaultConfig.appearance);
     expect(config.counterTime.breakEnabled).toBe(true);
     expect(config.counterTime.notifications.messages.start).toEqual({
       title: "COMEÇOU",
@@ -66,5 +67,35 @@ describe("normalizeConfig", () => {
     expect(config.counterTime.notifications.sound).toBe(true);
     expect(config.counterTime.schedule.start).toBe(defaultConfig.counterTime.schedule.start);
     expect(config.counterTime.schedule.end).toBe("22:30");
+  });
+
+  it("normalizes appearance values", () => {
+    const config = normalizeConfig({
+      applications: [],
+      appearance: {
+        mode: "gradient",
+        primaryColor: "#22D3EE",
+        secondaryColor: "#0EA5E9",
+      },
+    });
+
+    expect(config.appearance).toEqual({
+      mode: "gradient",
+      primaryColor: "#22d3ee",
+      secondaryColor: "#0ea5e9",
+    });
+  });
+
+  it("rejects malformed appearance values", () => {
+    const config = normalizeConfig({
+      applications: [],
+      appearance: {
+        mode: "rainbow",
+        primaryColor: "blue",
+        secondaryColor: "#123",
+      },
+    } as never);
+
+    expect(config.appearance).toEqual(defaultConfig.appearance);
   });
 });

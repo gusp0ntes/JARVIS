@@ -1,7 +1,7 @@
 {
   "name": "jarvis",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "JARVIS - Configurable profile launcher",
   "author": "Gustavo Pontes",
   "type": "module",
@@ -14,9 +14,11 @@
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
     "electron": "node scripts/start-electron.cjs",
+    "vpn:auto:install": "py -3 -m pip install -r electron/vpn-auto/requirements.txt",
     "dist": "npm run build && electron-builder"
   },
   "dependencies": {
+    "lucide-react": "^1.49.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -38,6 +40,9 @@
     "appId": "com.jarvis.desktop",
     "productName": "JARVIS",
     "electronDist": "node_modules/electron/dist",
+    "asarUnpack": [
+      "electron/vpn-auto/**/*"
+    ],
     "directories": {
       "output": "release"
     },

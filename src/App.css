@@ -53,6 +53,16 @@ button {
 .jarvis {
   position: relative;
 
+  --jarvis-accent: #ffffff;
+  --jarvis-accent-2: #38bdf8;
+  --jarvis-accent-rgb: 255, 255, 255;
+  --jarvis-accent-2-rgb: 56, 189, 248;
+  --jarvis-accent-text: #111111;
+  --jarvis-surface-start: #151515;
+  --jarvis-surface-end: #0d0d0d;
+  --jarvis-panel-start: #151515;
+  --jarvis-panel-end: #0b0b0b;
+
   width: 100vw;
   height: 100vh;
 
@@ -62,10 +72,10 @@ button {
 
   background:
     linear-gradient(145deg,
-      #151515 0%,
-      #0d0d0d 100%);
+      var(--jarvis-surface-start) 0%,
+      var(--jarvis-surface-end) 100%);
 
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--jarvis-accent-rgb), 0.12);
   border-radius: 24px;
 }
 
@@ -103,10 +113,10 @@ button {
 
   border-radius: 50%;
 
-  background: #ffffff;
+  background: var(--jarvis-accent);
 
   box-shadow:
-    0 0 12px rgba(255, 255, 255, 0.5);
+    0 0 12px rgba(var(--jarvis-accent-rgb), 0.55);
 }
 
 .title {
@@ -118,13 +128,25 @@ button {
   opacity: 0.9;
 }
 
+.window-controls {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  -webkit-app-region: no-drag;
+}
+
+.window-button,
 .settings-button {
   width: 38px;
   height: 38px;
 
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  padding: 0;
 
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
@@ -147,12 +169,54 @@ button {
   -webkit-app-region: no-drag;
 }
 
+.window-button svg,
+.settings-button svg,
+.expand-all-button svg,
+.close-button svg,
+.expand-button svg,
+.remove-button svg,
+.secondary-button svg,
+.test-notification-button svg,
+.cancel-button svg,
+.save-button svg,
+.notification-close svg,
+.toggle-circle svg {
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.window-button:hover,
 .settings-button:hover {
   opacity: 1;
 
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--jarvis-accent-rgb), 0.25);
 
+  background: rgba(var(--jarvis-accent-rgb), 0.1);
+}
+
+.settings-button:hover {
   transform: rotate(20deg);
+}
+
+.window-button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.window-button:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.close-window-button {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.close-window-button:hover {
+  border-color: rgba(248, 113, 113, 0.35);
+
+  background: rgba(248, 113, 113, 0.12);
 }
 
 /* ==========================================================================
@@ -252,7 +316,7 @@ button {
 }
 
 .toggle.active {
-  background: #ffffff;
+  background: var(--jarvis-accent);
 }
 
 .toggle-circle {
@@ -309,7 +373,7 @@ button {
 
   border-radius: 50%;
 
-  background: #ffffff;
+  background: var(--jarvis-accent);
 }
 
 .run-report {
@@ -583,7 +647,7 @@ button {
 
   border-radius: inherit;
 
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--jarvis-accent);
 
   transition: width 1s linear;
 }
@@ -625,8 +689,8 @@ button {
 
   background:
     linear-gradient(145deg,
-      #151515 0%,
-      #0b0b0b 100%);
+      var(--jarvis-panel-start) 0%,
+      var(--jarvis-panel-end) 100%);
 
   animation:
     settingsIn 0.2s ease;
@@ -661,6 +725,52 @@ button {
     1px solid rgba(255, 255, 255, 0.06);
 }
 
+.settings-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+.expand-all-button {
+  width: 38px;
+  height: 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  padding: 0;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  opacity: 0.7;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.expand-all-button:hover {
+  border-color: rgba(var(--jarvis-accent-rgb), 0.25);
+
+  background: rgba(var(--jarvis-accent-rgb), 0.1);
+
+  color: #ffffff;
+}
+
 .settings-eyebrow {
   font-size: 10px;
   font-weight: 500;
@@ -678,33 +788,41 @@ button {
 }
 
 .close-button {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  padding: 0;
 
   border:
     1px solid rgba(255, 255, 255, 0.08);
-
-  border-radius: 9px;
+  border-radius: 10px;
 
   background: rgba(255, 255, 255, 0.04);
 
   color: #ffffff;
 
-  font-size: 20px;
-
   cursor: pointer;
 
-  opacity: 0.65;
+  opacity: 0.7;
 
   transition:
     background 0.2s ease,
+    border-color 0.2s ease,
     opacity 0.2s ease;
 }
 
 .close-button:hover {
   opacity: 1;
 
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--jarvis-accent-rgb), 0.25);
+
+  background: rgba(var(--jarvis-accent-rgb), 0.1);
 }
 
 /* ==========================================================================
@@ -728,7 +846,7 @@ button {
 }
 
 .settings-content::-webkit-scrollbar-thumb {
-  background: #303034;
+  background: rgba(var(--jarvis-accent-rgb), 0.35);
   border-radius: 99px;
 }
 
@@ -747,19 +865,54 @@ button {
   border-radius: 15px;
 
   background: rgba(255, 255, 255, 0.025);
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.config-card.collapsed {
+  background: rgba(255, 255, 255, 0.018);
 }
 
 .card-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  gap: 12px;
 }
 
-.card-heading>div {
+.card-title-button {
+  min-width: 0;
+
+  flex: 1;
+
   display: flex;
   align-items: center;
 
   gap: 10px;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  text-align: left;
+}
+
+.card-heading-actions {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
 }
 
 .card-eyebrow {
@@ -769,11 +922,56 @@ button {
   opacity: 0.3;
 }
 
-.card-heading h3 {
-  margin: 0;
-
+.card-title {
   font-size: 15px;
   font-weight: 600;
+}
+
+.expand-button {
+  width: 26px;
+  height: 26px;
+
+  flex: 0 0 auto;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+
+  background: rgba(255, 255, 255, 0.03);
+
+  color: rgba(255, 255, 255, 0.62);
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.expand-button:hover {
+  border-color: rgba(var(--jarvis-accent-rgb), 0.25);
+
+  background: rgba(var(--jarvis-accent-rgb), 0.1);
+
+  color: #ffffff;
+}
+
+.expand-icon {
+  display: block;
+
+  transition:
+    transform 0.2s ease;
+}
+
+.expand-button.open .expand-icon {
+  transform: rotate(180deg);
 }
 
 .card-description {
@@ -783,6 +981,22 @@ button {
   line-height: 1.55;
 
   opacity: 0.4;
+}
+
+.profile-appearance {
+  margin-top: 17px;
+  padding-top: 15px;
+
+  border-top:
+    1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile-appearance .field-label {
+  margin-top: 0;
+}
+
+.profile-appearance .card-description {
+  margin-bottom: 12px;
 }
 
 .counter {
@@ -842,10 +1056,10 @@ button {
 }
 
 .state-toggle.active {
-  border-color: #ffffff;
+  border-color: var(--jarvis-accent);
 
-  background: #ffffff;
-  color: #111111;
+  background: var(--jarvis-accent);
+  color: var(--jarvis-accent-text);
 }
 
 .state-toggle:focus {
@@ -953,6 +1167,12 @@ button {
 
   flex-shrink: 0;
 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
   border: 0;
   border-radius: 7px;
 
@@ -987,6 +1207,12 @@ button {
 
 .secondary-button {
   flex: 1;
+
+  min-height: 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   padding: 10px 11px;
 
@@ -1104,6 +1330,13 @@ button {
 }
 
 .detected-item strong {
+  width: 18px;
+  height: 18px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   font-size: 14px;
 
   opacity: 0.5;
@@ -1153,7 +1386,7 @@ button {
 
 .field:focus {
   border-color:
-    rgba(255, 255, 255, 0.2);
+    rgba(var(--jarvis-accent-rgb), 0.45);
 
   background: #1d1d20;
 }
@@ -1197,6 +1430,189 @@ select.field {
   line-height: 1.4;
 
   opacity: 0.65;
+}
+
+/* ==========================================================================
+   APPEARANCE SETTINGS
+   ========================================================================== */
+
+.appearance-preview {
+  height: 74px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 12px;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.16),
+    0 14px 35px rgba(0, 0, 0, 0.18);
+}
+
+.appearance-preview span {
+  padding: 7px 10px;
+
+  border-radius: 7px;
+
+  background: rgba(0, 0, 0, 0.2);
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+
+  color: #ffffff;
+}
+
+.appearance-mode-control {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 6px;
+
+  margin-bottom: 11px;
+
+  padding: 4px;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.appearance-mode-control button {
+  height: 32px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: rgba(255, 255, 255, 0.45);
+
+  cursor: pointer;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.appearance-mode-control button.active {
+  background: var(--jarvis-accent);
+
+  color: var(--jarvis-accent-text);
+}
+
+.color-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 9px;
+}
+
+.color-field {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+
+  padding: 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.color-field span {
+  min-width: 0;
+
+  font-size: 10px;
+  font-weight: 500;
+
+  opacity: 0.55;
+}
+
+.color-field input {
+  width: 36px;
+  height: 28px;
+
+  flex: 0 0 auto;
+
+  padding: 0;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.color-field input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-field input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 7px;
+}
+
+.preset-swatches {
+  display: grid;
+
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+
+  gap: 8px;
+
+  margin-top: 11px;
+}
+
+.preset-swatches button {
+  height: 32px;
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+
+  cursor: pointer;
+
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.18);
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
+}
+
+.preset-swatches button:hover {
+  transform: translateY(-1px);
+}
+
+.preset-swatches button.active {
+  border-color: #ffffff;
+
+  box-shadow:
+    0 0 0 2px rgba(var(--jarvis-accent-rgb), 0.24),
+    inset 0 1px rgba(255, 255, 255, 0.2);
 }
 
 /* ==========================================================================
@@ -1341,7 +1757,14 @@ select.field {
 }
 
 .test-notification-button {
-  padding: 6px 9px;
+  width: 30px;
+  height: 30px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
 
   border:
     1px solid rgba(255, 255, 255, 0.07);
@@ -1396,6 +1819,12 @@ select.field {
 .save-button {
   height: 42px;
 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
   border-radius: 9px;
 
   cursor: pointer;
@@ -1405,10 +1834,12 @@ select.field {
   transition:
     background 0.2s ease,
     transform 0.1s ease;
+
+  gap: 8px;
 }
 
 .cancel-button {
-  width: 105px;
+  width: 52px;
 
   border:
     1px solid rgba(255, 255, 255, 0.08);
@@ -1427,15 +1858,15 @@ select.field {
 
   border: 0;
 
-  background: #ffffff;
+  background: var(--jarvis-accent);
 
-  color: #111111;
+  color: var(--jarvis-accent-text);
 
   font-weight: 600;
 }
 
 .save-button:hover {
-  background: #e5e5e5;
+  filter: brightness(1.08);
 }
 
 .cancel-button:active,
@@ -1447,6 +1878,17 @@ select.field {
   opacity: 0.5;
 
   cursor: default;
+}
+
+.button-spinner {
+  animation:
+    iconSpin 0.9s linear infinite;
+}
+
+@keyframes iconSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==========================================================================
@@ -1644,6 +2086,8 @@ select.field {
 
   flex-shrink: 0;
 
+  padding: 0;
+
   border: 0;
   border-radius: 7px;
 
@@ -1696,7 +2140,7 @@ select.field {
 
   transform-origin: left center;
 
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(var(--jarvis-accent-rgb, 255, 255, 255), 0.7);
 
   animation:
     notificationTimer linear forwards;

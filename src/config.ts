@@ -16,6 +16,22 @@ function readBoolean(value: unknown, fallback = false) {
   return typeof value === "boolean" ? value : fallback;
 }
 
+function readColor(value: unknown, fallback: string) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const color = value.trim();
+
+  return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : fallback;
+}
+
+function readAppearanceMode(value: unknown) {
+  return value === "gradient" || value === "solid"
+    ? value
+    : defaultConfig.appearance.mode;
+}
+
 function readDuration(value: unknown, fallback = 5) {
   const duration = Number(value);
 
@@ -48,6 +64,11 @@ export const defaultConfig: JarvisConfig = {
   profile: {
     name: "Meu perfil",
     description: "Ambiente personalizado",
+  },
+  appearance: {
+    mode: "solid",
+    primaryColor: "#ffffff",
+    secondaryColor: "#38bdf8",
   },
   applications: [],
   browser: {
@@ -106,6 +127,7 @@ type ConfigInput = DeepPartial<Omit<JarvisConfig, "applications">> & {
 export function normalizeConfig(saved: ConfigInput | null | undefined): JarvisConfig {
   const safeSaved = isPlainObject(saved) ? saved : {};
   const profile = isPlainObject(safeSaved.profile) ? safeSaved.profile : {};
+  const appearance = isPlainObject(safeSaved.appearance) ? safeSaved.appearance : {};
   const browser = isPlainObject(safeSaved.browser) ? safeSaved.browser : {};
   const vpn = isPlainObject(safeSaved.vpn) ? safeSaved.vpn : {};
   const counterTime = isPlainObject(safeSaved.counterTime) ? safeSaved.counterTime : {};
@@ -122,6 +144,17 @@ export function normalizeConfig(saved: ConfigInput | null | undefined): JarvisCo
         profile.description,
         defaultConfig.profile.description,
         160,
+      ),
+    },
+    appearance: {
+      mode: readAppearanceMode(appearance.mode),
+      primaryColor: readColor(
+        appearance.primaryColor,
+        defaultConfig.appearance.primaryColor,
+      ),
+      secondaryColor: readColor(
+        appearance.secondaryColor,
+        defaultConfig.appearance.secondaryColor,
       ),
     },
     applications: Array.isArray(safeSaved.applications)

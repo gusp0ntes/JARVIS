@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
+import { Check, Minus, Settings as SettingsIcon, X as XIcon } from "lucide-react";
 
 import "./App.css";
 
 import { cloneDefaultConfig, normalizeConfig } from "./config";
 import { CounterTime } from "./components/CounterTime";
+import { IconButton } from "./components/IconButton";
 import { NotificationWindow } from "./components/NotificationWindow";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { validateCounterSchedule } from "./time";
 import type {
   Application,
+  AppearanceConfig,
   BrowserConfig,
   CounterEventKey,
   CounterSchedule,
@@ -24,10 +28,69 @@ interface RunIssue {
   message: string;
 }
 
+function hexToRgb(hex: string) {
+  const normalized = /^#[0-9a-f]{6}$/i.test(hex) ? hex : "#ffffff";
+
+  return {
+    r: Number.parseInt(normalized.slice(1, 3), 16),
+    g: Number.parseInt(normalized.slice(3, 5), 16),
+    b: Number.parseInt(normalized.slice(5, 7), 16),
+  };
+}
+
+function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
+  return `#${[r, g, b]
+    .map((channel) => Math.round(channel).toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function mixColors(color: string, base: string, amount: number) {
+  const colorRgb = hexToRgb(color);
+  const baseRgb = hexToRgb(base);
+
+  return rgbToHex({
+    r: colorRgb.r * amount + baseRgb.r * (1 - amount),
+    g: colorRgb.g * amount + baseRgb.g * (1 - amount),
+    b: colorRgb.b * amount + baseRgb.b * (1 - amount),
+  });
+}
+
+function getReadableTextColor(color: string) {
+  const { r, g, b } = hexToRgb(color);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.64 ? "#111111" : "#ffffff";
+}
+
+function createAppearanceStyle(appearance: AppearanceConfig) {
+  const primary = appearance.primaryColor;
+  const secondary = appearance.secondaryColor;
+  const primaryRgb = hexToRgb(primary);
+  const secondaryRgb = hexToRgb(secondary);
+  const surfaceStart = mixColors(primary, "#151515", 0.18);
+  const surfaceEnd =
+    appearance.mode === "gradient" ? mixColors(secondary, "#0b0b0b", 0.2) : "#0b0b0b";
+  const panelEnd =
+    appearance.mode === "gradient" ? mixColors(secondary, "#090909", 0.16) : "#090909";
+
+  return {
+    "--jarvis-accent": primary,
+    "--jarvis-accent-2": secondary,
+    "--jarvis-accent-rgb": `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`,
+    "--jarvis-accent-2-rgb": `${secondaryRgb.r}, ${secondaryRgb.g}, ${secondaryRgb.b}`,
+    "--jarvis-accent-text": getReadableTextColor(primary),
+    "--jarvis-surface-start": surfaceStart,
+    "--jarvis-surface-end": surfaceEnd,
+    "--jarvis-panel-start": mixColors(primary, "#151515", 0.12),
+    "--jarvis-panel-end": panelEnd,
+  } as CSSProperties;
+}
+
 function JarvisApp() {
   const [enabled, setEnabled] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [applications, setApplications] = useState<Application[]>([]);
   const [detectedApplications, setDetectedApplications] = useState<Application[]>([]);
@@ -107,6 +170,48 @@ function JarvisApp() {
     await Promise.all([detectApplications(), detectBrowsers(), detectVPNs()]);
   }
 
+  async function minimizeWindow() {
+    try {
+      await window.jarvis.minimizeWindow();
+    } catch (error) {
+      console.error("Erro ao minimizar janela:", error);
+    }
+  }
+
+  async function closeWindow() {
+    if (closing) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      enabled || loading
+        ? "Ao fechar o JARVIS, os processos iniciados por este perfil serão encerrados e a VPN configurada será desconectada. Deseja continuar?"
+        : "Deseja fechar o JARVIS?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setClosing(true);
+
+    try {
+      if (enabled || loading) {
+        await stopProfileEnvironment();
+      }
+
+      const closed = await window.jarvis.closeWindow();
+
+      if (!closed) {
+        throw new Error("A janela principal não pôde ser fechada.");
+      }
+    } catch (error) {
+      console.error("Erro ao fechar janela:", error);
+      alert(`Não foi possível fechar o JARVIS.\n\n${getErrorMessage(error)}`);
+      setClosing(false);
+    }
+  }
+
   async function saveSettings() {
     setSaving(true);
 
@@ -172,6 +277,16 @@ function JarvisApp() {
       profile: {
         ...current.profile,
         ...profile,
+      },
+    }));
+  }
+
+  function updateAppearance(appearance: Partial<AppearanceConfig>) {
+    setConfig((current) => ({
+      ...current,
+      appearance: {
+        ...current.appearance,
+        ...appearance,
       },
     }));
   }
@@ -311,6 +426,49 @@ function JarvisApp() {
     };
   }
 
+  async function stopProfileEnvironment() {
+    setStatusMessage("ENCERRANDO PERFIL");
+
+    const stopIssues: RunIssue[] = [];
+
+    try {
+      const closed = await window.jarvis.closeLaunchedProcesses();
+
+      if (!closed) {
+        stopIssues.push({
+          target: "Processos",
+          message: "Alguns processos já haviam sido encerrados ou não puderam ser fechados.",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao fechar processos iniciados:", error);
+      stopIssues.push({
+        target: "Processos",
+        message: getErrorMessage(error),
+      });
+    }
+
+    if (config.vpn.enabled && config.vpn.name) {
+      try {
+        await window.jarvis.disconnectVpn(config.vpn.name);
+      } catch (error) {
+        console.error("Erro ao desconectar VPN:", error);
+        stopIssues.push({
+          target: "VPN",
+          message: getErrorMessage(error),
+        });
+      }
+    }
+
+    setEnabled(false);
+    setRunIssues(stopIssues);
+    setStatusMessage(
+      stopIssues.length > 0 ? "PERFIL DESATIVADO COM AVISOS" : "PERFIL DESATIVADO",
+    );
+
+    return stopIssues;
+  }
+
   function getStartupValidationIssues() {
     const issues: RunIssue[] = [];
 
@@ -355,7 +513,7 @@ function JarvisApp() {
   }
 
   async function toggleJarvis() {
-    if (loading) {
+    if (loading || closing) {
       return;
     }
 
@@ -439,43 +597,7 @@ function JarvisApp() {
     }
 
     try {
-      setStatusMessage("ENCERRANDO PERFIL");
-      const stopIssues: RunIssue[] = [];
-
-      try {
-        const closed = await window.jarvis.closeLaunchedProcesses();
-
-        if (!closed) {
-          stopIssues.push({
-            target: "Processos",
-            message: "Alguns processos já haviam sido encerrados ou não puderam ser fechados.",
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao fechar processos iniciados:", error);
-        stopIssues.push({
-          target: "Processos",
-          message: getErrorMessage(error),
-        });
-      }
-
-      if (config.vpn.enabled && config.vpn.name) {
-        try {
-          await window.jarvis.disconnectVpn(config.vpn.name);
-        } catch (error) {
-          console.error("Erro ao desconectar VPN:", error);
-          stopIssues.push({
-            target: "VPN",
-            message: getErrorMessage(error),
-          });
-        }
-      }
-
-      setEnabled(false);
-      setRunIssues(stopIssues);
-      setStatusMessage(
-        stopIssues.length > 0 ? "PERFIL DESATIVADO COM AVISOS" : "PERFIL DESATIVADO",
-      );
+      await stopProfileEnvironment();
     } finally {
       setLoading(false);
     }
@@ -485,26 +607,53 @@ function JarvisApp() {
     void loadConfig();
   }, []);
 
-  const statusText = loading
-    ? config.vpn.enabled && !enabled
-      ? "AGUARDANDO VPN"
-      : "INICIANDO"
-    : statusMessage || (enabled ? "PERFIL ATIVO" : "PERFIL DESATIVADO");
+  const statusText = closing
+    ? "FECHANDO JARVIS"
+    : loading
+      ? config.vpn.enabled && !enabled
+        ? "AGUARDANDO VPN"
+        : "INICIANDO"
+      : statusMessage || (enabled ? "PERFIL ATIVO" : "PERFIL DESATIVADO");
 
   const profileName = config.profile.name.trim() || "Meu perfil";
   const profileDescription = config.profile.description.trim() || "Ambiente personalizado";
+  const appearanceStyle = createAppearanceStyle(config.appearance);
 
   return (
-    <main className="jarvis">
+    <main className="jarvis" style={appearanceStyle}>
       <header className="header">
         <div className="brand">
           <span className="brand-dot" />
           <span className="title">JARVIS</span>
         </div>
 
-        <button className="settings-button" onClick={openSettings} aria-label="Configurações">
-          ⚙
-        </button>
+        <div className="window-controls">
+          <IconButton
+            className="window-button"
+            onClick={() => {
+              void minimizeWindow();
+            }}
+            label="Minimizar janela"
+            icon={<Minus size={18} strokeWidth={2.2} aria-hidden="true" />}
+          />
+
+          <IconButton
+            className="window-button close-window-button"
+            onClick={() => {
+              void closeWindow();
+            }}
+            disabled={closing}
+            label="Fechar janela"
+            icon={<XIcon size={18} strokeWidth={2.4} aria-hidden="true" />}
+          />
+
+          <IconButton
+            className="settings-button"
+            onClick={openSettings}
+            label="Configurações"
+            icon={<SettingsIcon size={18} strokeWidth={2.1} aria-hidden="true" />}
+          />
+        </div>
       </header>
 
       <section className="content">
@@ -517,9 +666,11 @@ function JarvisApp() {
         <button
           className={`toggle ${enabled ? "active" : ""}`}
           onClick={toggleJarvis}
-          disabled={loading}
+          disabled={loading || closing}
         >
-          <span className="toggle-circle">{enabled ? "✓" : ""}</span>
+          <span className="toggle-circle">
+            {enabled ? <Check size={18} strokeWidth={2.8} aria-hidden="true" /> : null}
+          </span>
         </button>
 
         <div className={`status ${enabled ? "active" : ""}`}>
@@ -567,6 +718,7 @@ function JarvisApp() {
           detectedBrowsers={detectedBrowsers}
           detectedVPNs={detectedVPNs}
           detectingApplications={detectingApplications}
+          closing={closing}
           saving={saving}
           onAddApplication={addApplication}
           onAddManualApplication={addManualApplication}
@@ -582,6 +734,9 @@ function JarvisApp() {
           onNotificationMessageChange={updateNotificationMessage}
           onNotificationSoundChange={(sound) => updateNotifications({ sound })}
           onNotificationsEnabledChange={(enabled) => updateNotifications({ enabled })}
+          onAppearanceChange={updateAppearance}
+          onCloseWindow={closeWindow}
+          onMinimizeWindow={minimizeWindow}
           onProfileChange={updateProfile}
           onRemoveApplication={removeApplication}
           onSave={saveSettings}

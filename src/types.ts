@@ -22,6 +22,14 @@ export interface ProfileConfig {
   description: string;
 }
 
+export type AppearanceMode = "solid" | "gradient";
+
+export interface AppearanceConfig {
+  mode: AppearanceMode;
+  primaryColor: string;
+  secondaryColor: string;
+}
+
 export interface CounterSchedule {
   start: string;
   lunchStart: string;
@@ -52,6 +60,7 @@ export interface CounterTimeConfig {
 
 export interface JarvisConfig {
   profile: ProfileConfig;
+  appearance: AppearanceConfig;
   applications: Application[];
   browser: BrowserConfig;
   vpn: VPNConfig;
@@ -94,6 +103,8 @@ export interface NotificationData {
 }
 
 export interface JarvisAPI {
+  minimizeWindow(): Promise<boolean>;
+  closeWindow(): Promise<boolean>;
   getConfig(): Promise<JarvisConfig>;
   saveConfig(config: JarvisConfig): Promise<boolean>;
   launchProgram(programPath: string): Promise<LaunchResult>;

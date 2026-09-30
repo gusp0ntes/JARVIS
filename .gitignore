@@ -37,6 +37,8 @@ coverage/
 .vitest/
 .eslintcache
 *.tsbuildinfo
+__pycache__/
+*.py[cod]
 
 # Editors
 .vscode/*

@@ -84,6 +84,12 @@ const defaultConfig = {
     description: "Ambiente personalizado",
   },
 
+  appearance: {
+    mode: "solid",
+    primaryColor: "#ffffff",
+    secondaryColor: "#38bdf8",
+  },
+
   applications: [],
 
   browser: {
@@ -168,6 +174,26 @@ function sanitizeBoolean(value, fallback = false) {
   return typeof value === "boolean" ? value : fallback;
 }
 
+function sanitizeColor(value, fallback) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const color =
+    value.trim();
+
+  return /^#[0-9a-f]{6}$/i.test(color)
+    ? color.toLowerCase()
+    : fallback;
+}
+
+function sanitizeAppearanceMode(value) {
+  return value === "gradient" ||
+    value === "solid"
+    ? value
+    : defaultConfig.appearance.mode;
+}
+
 function sanitizeDuration(value, fallback = 5) {
   const duration = Number(value);
 
@@ -223,6 +249,7 @@ function sanitizeNotificationMessage(value, fallback) {
 function sanitizeConfig(value) {
   const safeValue = isPlainObject(value) ? value : {};
   const safeProfile = isPlainObject(safeValue.profile) ? safeValue.profile : {};
+  const safeAppearance = isPlainObject(safeValue.appearance) ? safeValue.appearance : {};
   const safeBrowser = isPlainObject(safeValue.browser) ? safeValue.browser : {};
   const safeVpn = isPlainObject(safeValue.vpn) ? safeValue.vpn : {};
   const safeCounterTime = isPlainObject(safeValue.counterTime) ? safeValue.counterTime : {};
@@ -248,6 +275,23 @@ function sanitizeConfig(value) {
         defaultConfig.profile.description,
         160
       ),
+    },
+
+    appearance: {
+      mode:
+        sanitizeAppearanceMode(
+          safeAppearance.mode
+        ),
+      primaryColor:
+        sanitizeColor(
+          safeAppearance.primaryColor,
+          defaultConfig.appearance.primaryColor
+        ),
+      secondaryColor:
+        sanitizeColor(
+          safeAppearance.secondaryColor,
+          defaultConfig.appearance.secondaryColor
+        ),
     },
 
     applications,
@@ -528,6 +572,8 @@ function createWindow() {
     minHeight: 760,
 
     resizable: true,
+    minimizable: true,
+    closable: true,
 
     frame: false,
 
@@ -808,6 +854,70 @@ function showJarvisNotification({
 
   sendNotification(data);
 }
+
+/*
+|--------------------------------------------------------------------------
+| IPC - JANELA PRINCIPAL
+|--------------------------------------------------------------------------
+*/
+
+ipcMain.handle(
+  "minimize-window",
+  async (event) => {
+    const senderWindow =
+      BrowserWindow.fromWebContents(
+        event.sender
+      );
+    const window =
+      senderWindow ||
+      mainWindow;
+
+    if (
+      window &&
+      !window.isDestroyed()
+    ) {
+      window.setSkipTaskbar(
+        false
+      );
+
+      if (
+        window.isMinimizable()
+      ) {
+        window.minimize();
+      } else {
+        window.hide();
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+);
+
+ipcMain.handle(
+  "close-window",
+  async (event) => {
+    const senderWindow =
+      BrowserWindow.fromWebContents(
+        event.sender
+      );
+    const window =
+      senderWindow ||
+      mainWindow;
+
+    if (
+      window &&
+      !window.isDestroyed()
+    ) {
+      window.close();
+
+      return true;
+    }
+
+    return false;
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -1628,6 +1738,239 @@ function getVpnStatus(
   );
 }
 
+function getVpnAutomationScriptPath() {
+  const relativeScriptPath = path.join(
+    "electron",
+    "vpn-auto",
+    "desktop_auto.py"
+  );
+
+  const appPath =
+    app.getAppPath();
+
+  const candidates = [
+    path.join(
+      __dirname,
+      "vpn-auto",
+      "desktop_auto.py"
+    ),
+
+    path.join(
+      __dirname.replace(
+        "app.asar",
+        "app.asar.unpacked"
+      ),
+      "vpn-auto",
+      "desktop_auto.py"
+    ),
+
+    path.join(
+      appPath,
+      relativeScriptPath
+    ),
+
+    path.join(
+      appPath.replace(
+        "app.asar",
+        "app.asar.unpacked"
+      ),
+      relativeScriptPath
+    ),
+
+    path.join(
+      process.resourcesPath || "",
+      "app.asar.unpacked",
+      relativeScriptPath
+    ),
+  ];
+
+  return candidates.find(
+    (candidate) =>
+      fs.existsSync(
+        candidate
+      )
+  );
+}
+
+function logPythonVpnAutomationOutput(
+  stream,
+  data
+) {
+  const lines =
+    String(
+      data || ""
+    )
+      .split(/\r?\n/)
+      .map(
+        (line) =>
+          line.trim()
+      )
+      .filter(Boolean);
+
+  for (
+    const line of
+      lines
+  ) {
+    console[stream](
+      line
+    );
+  }
+}
+
+function startPythonVpnAutomation(
+  vpnName
+) {
+  if (
+    process.platform !==
+    "win32"
+  ) {
+    return null;
+  }
+
+  const safeVpnName =
+    requireVpnName(
+      vpnName
+    );
+
+  const scriptPath =
+    getVpnAutomationScriptPath();
+
+  if (!scriptPath) {
+    console.warn(
+      "Script Python de automaÃ§Ã£o da VPN nÃ£o encontrado."
+    );
+
+    return null;
+  }
+
+  const scriptArgs = [
+    scriptPath,
+    "--vpn-name",
+    safeVpnName,
+    "--timeout",
+    "120",
+  ];
+
+  let child = null;
+  let stopped = false;
+
+  function start(
+    command,
+    args,
+    allowFallback
+  ) {
+    try {
+      child = spawn(
+        command,
+        args,
+        {
+          windowsHide: true,
+          stdio: [
+            "ignore",
+            "pipe",
+            "pipe",
+          ],
+        }
+      );
+    } catch (error) {
+      console.warn(
+        "NÃ£o foi possÃ­vel iniciar a automaÃ§Ã£o Python da VPN:",
+        getErrorMessage(
+          error
+        )
+      );
+
+      return;
+    }
+
+    child.stdout.on(
+      "data",
+      (data) =>
+        logPythonVpnAutomationOutput(
+          "log",
+          data
+        )
+    );
+
+    child.stderr.on(
+      "data",
+      (data) =>
+        logPythonVpnAutomationOutput(
+          "warn",
+          data
+        )
+    );
+
+    child.once(
+      "error",
+      (error) => {
+        if (
+          allowFallback &&
+          error?.code ===
+            "ENOENT" &&
+          !stopped
+        ) {
+          start(
+            "python",
+            scriptArgs,
+            false
+          );
+
+          return;
+        }
+
+        if (!stopped) {
+          console.warn(
+            "AutomaÃ§Ã£o Python da VPN falhou:",
+            getErrorMessage(
+              error
+            )
+          );
+        }
+      }
+    );
+
+    child.once(
+      "exit",
+      (code) => {
+        if (
+          !stopped &&
+          code &&
+          code !== 0 &&
+          code !== 2
+        ) {
+          console.warn(
+            `AutomaÃ§Ã£o Python da VPN finalizou com cÃ³digo ${code}.`
+          );
+        }
+      }
+    );
+  }
+
+  start(
+    "py",
+    [
+      "-3",
+      ...scriptArgs,
+    ],
+    true
+  );
+
+  return {
+    stop() {
+      stopped = true;
+
+      if (
+        child &&
+        child.exitCode === null &&
+        !child.killed
+      ) {
+        child.kill();
+      }
+    },
+  };
+}
+
 /*
 |--------------------------------------------------------------------------
 | ABRIR JANELA NATIVA DA VPN
@@ -1726,49 +2069,58 @@ ipcMain.handle(
       };
     }
 
-    await openWindowsVpnConnection(
-      safeVpnName
-    );
+    const vpnAutomation =
+      startPythonVpnAutomation(
+        safeVpnName
+      );
 
-    for (
-      let attempt = 0;
-      attempt < 120;
-      attempt++
-    ) {
-      const status =
-        await getVpnStatus(
-          safeVpnName
-        );
+    try {
+      await openWindowsVpnConnection(
+        safeVpnName
+      );
 
-      if (
-        status &&
-        status.toLowerCase() ===
-          "connected"
+      for (
+        let attempt = 0;
+        attempt < 120;
+        attempt++
       ) {
-        return {
-          success: true,
+        const status =
+          await getVpnStatus(
+            safeVpnName
+          );
 
-          connected: true,
+        if (
+          status &&
+          status.toLowerCase() ===
+            "connected"
+        ) {
+          return {
+            success: true,
 
-          alreadyConnected: false,
+            connected: true,
 
-          message:
-            `VPN "${safeVpnName}" conectada com sucesso.`,
-        };
+            alreadyConnected: false,
+
+            message:
+              `VPN "${safeVpnName}" conectada com sucesso.`,
+          };
+        }
+
+        await new Promise(
+          (resolveWait) =>
+            setTimeout(
+              resolveWait,
+              1000
+            )
+        );
       }
 
-      await new Promise(
-        (resolveWait) =>
-          setTimeout(
-            resolveWait,
-            1000
-          )
+      throw new Error(
+        `A VPN "${safeVpnName}" não foi conectada dentro de 120 segundos.`
       );
+    } finally {
+      vpnAutomation?.stop();
     }
-
-    throw new Error(
-      `A VPN "${safeVpnName}" não foi conectada dentro de 120 segundos.`
-    );
   }
 );
 

@@ -1,3 +1,6 @@
+import { BellRing } from "lucide-react";
+
+import { IconButton } from "./IconButton";
 import type { NotificationMessage } from "../types";
 
 interface NotificationMessageEditorProps {
@@ -18,9 +21,12 @@ export function NotificationMessageEditor({
       <div className="message-editor-top">
         <label>{label}</label>
 
-        <button className="test-notification-button" onClick={onTest}>
-          Testar
-        </button>
+        <IconButton
+          className="test-notification-button"
+          onClick={onTest}
+          label={`Testar ${label}`}
+          icon={<BellRing size={14} strokeWidth={2.3} aria-hidden="true" />}
+        />
       </div>
 
       <input

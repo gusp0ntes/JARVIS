@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { X as XIcon } from "lucide-react";
 
 import type { NotificationData } from "../types";
+import { IconButton } from "./IconButton";
 
 export function NotificationWindow() {
   const [notification, setNotification] = useState<NotificationData | null>(null);
@@ -88,9 +90,12 @@ export function NotificationWindow() {
             <p>{notification.message}</p>
           </div>
 
-          <button className="notification-close" onClick={() => dismissNotification()}>
-            ×
-          </button>
+          <IconButton
+            className="notification-close"
+            onClick={() => dismissNotification()}
+            label="Fechar notificação"
+            icon={<XIcon size={14} strokeWidth={2.4} aria-hidden="true" />}
+          />
         </div>
 
         <div className="notification-progress">
