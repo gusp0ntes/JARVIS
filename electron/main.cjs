@@ -9,6 +9,7 @@ const {
 
 const path = require("path");
 const fs = require("fs");
+const util = require("util");
 const { spawn, execFile } = require("child_process");
 
 let mainWindow = null;
@@ -76,6 +77,83 @@ const configDirectory = path.join(
 const configFile = path.join(
   configDirectory,
   "config.json"
+);
+
+const diagnosticLogFile = path.join(
+  configDirectory,
+  "jarvis.log"
+);
+
+function serializeLogValue(value) {
+  if (value instanceof Error) {
+    return value.stack || value.message;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return util.inspect(
+    value,
+    {
+      colors: false,
+      depth: 6,
+      breakLength: 120,
+    }
+  );
+}
+
+function writeDiagnosticLog(level, args) {
+  try {
+    fs.mkdirSync(
+      configDirectory,
+      {
+        recursive: true,
+      }
+    );
+
+    const message = args
+      .map(serializeLogValue)
+      .join(" ");
+
+    fs.appendFileSync(
+      diagnosticLogFile,
+      `[${new Date().toISOString()}] [${level.toUpperCase()}] ${message}\n`,
+      "utf-8"
+    );
+  } catch {
+    // Logging must never break the app startup path.
+  }
+}
+
+for (const level of ["log", "warn", "error"]) {
+  const original =
+    console[level].bind(
+      console
+    );
+
+  console[level] = (...args) => {
+    writeDiagnosticLog(
+      level,
+      args
+    );
+
+    original(
+      ...args
+    );
+  };
+}
+
+console.log(
+  "JARVIS main process started.",
+  {
+    version: app.getVersion(),
+    isPackaged: app.isPackaged,
+    appPath: app.getAppPath(),
+    userData: app.getPath("userData"),
+    configFile,
+    diagnosticLogFile,
+  }
 );
 
 const defaultConfig = {
@@ -429,8 +507,22 @@ function loadConfig() {
     ensureConfigDirectory();
 
     if (!fs.existsSync(configFile)) {
+      console.log(
+        "Config file not found. Using defaults.",
+        {
+          configFile,
+        }
+      );
+
       return structuredClone(defaultConfig);
     }
+
+    console.log(
+      "Loading config file.",
+      {
+        configFile,
+      }
+    );
 
     const raw = fs.readFileSync(
       configFile,
@@ -438,12 +530,38 @@ function loadConfig() {
     );
 
     if (!raw.trim()) {
+      console.log(
+        "Config file is empty. Using defaults.",
+        {
+          configFile,
+        }
+      );
+
       return structuredClone(defaultConfig);
     }
 
     const saved = JSON.parse(raw);
 
-    return mergeConfig(saved);
+    const mergedConfig =
+      mergeConfig(saved);
+
+    console.log(
+      "Config loaded.",
+      {
+        applications:
+          mergedConfig.applications.length,
+        browserEnabled:
+          mergedConfig.browser.enabled,
+        vpnEnabled:
+          mergedConfig.vpn.enabled,
+        vpnName:
+          mergedConfig.vpn.name,
+        counterTimeEnabled:
+          mergedConfig.counterTime.enabled,
+      }
+    );
+
+    return mergedConfig;
   } catch (error) {
     console.error(
       "Erro ao carregar configuração:",
@@ -460,6 +578,22 @@ function saveConfig(config) {
 
     const finalConfig =
       mergeConfig(config);
+
+    console.log(
+      "Saving config.",
+      {
+        applications:
+          finalConfig.applications.length,
+        browserEnabled:
+          finalConfig.browser.enabled,
+        vpnEnabled:
+          finalConfig.vpn.enabled,
+        vpnName:
+          finalConfig.vpn.name,
+        counterTimeEnabled:
+          finalConfig.counterTime.enabled,
+      }
+    );
 
     fs.writeFileSync(
       configFile,
@@ -542,6 +676,27 @@ function hardenRendererWindow(window) {
   window.webContents.setWindowOpenHandler(() => ({
     action: "deny",
   }));
+
+  window.webContents.on(
+    "console-message",
+    (
+      _event,
+      level,
+      message,
+      line,
+      sourceId
+    ) => {
+      console.log(
+        "Renderer console message.",
+        {
+          level,
+          message,
+          line,
+          sourceId,
+        }
+      );
+    }
+  );
 
   window.webContents.on(
     "will-navigate",
@@ -1037,6 +1192,15 @@ function launchProcess(
       let child;
 
       try {
+        console.log(
+          "Launching process.",
+          {
+            programPath,
+            args,
+            key,
+          }
+        );
+
         child = spawn(
           programPath,
           args,
@@ -1057,6 +1221,15 @@ function launchProcess(
       child.once(
         "spawn",
         () => {
+          console.log(
+            "Process spawned.",
+            {
+              programPath,
+              pid: child.pid,
+              key,
+            }
+          );
+
           if (key) {
             launchedProcesses.set(
               key,
@@ -1082,13 +1255,33 @@ function launchProcess(
       child.once(
         "error",
         (error) => {
+          console.error(
+            "Process spawn failed.",
+            {
+              programPath,
+              key,
+              error,
+            }
+          );
+
           reject(error);
         }
       );
 
       child.once(
         "exit",
-        () => {
+        (code, signal) => {
+          console.log(
+            "Process exited.",
+            {
+              programPath,
+              pid: child.pid,
+              key,
+              code,
+              signal,
+            }
+          );
+
           if (
             key &&
             launchedProcesses.has(key)
@@ -1193,6 +1386,15 @@ ipcMain.handle(
       Array.from(
         launchedProcesses.values()
       );
+
+    console.log(
+      "Closing launched processes.",
+      {
+        count:
+          processes.length,
+        processes,
+      }
+    );
 
     launchedProcesses.clear();
 
@@ -1738,6 +1940,13 @@ function getVpnStatus(
   );
 }
 
+function isAsarVirtualPath(filePath) {
+  return path
+    .normalize(filePath)
+    .split(path.sep)
+    .includes("app.asar");
+}
+
 function getVpnAutomationScriptPath() {
   const relativeScriptPath = path.join(
     "electron",
@@ -1750,23 +1959,12 @@ function getVpnAutomationScriptPath() {
 
   const candidates = [
     path.join(
-      __dirname,
-      "vpn-auto",
-      "desktop_auto.py"
-    ),
-
-    path.join(
       __dirname.replace(
         "app.asar",
         "app.asar.unpacked"
       ),
       "vpn-auto",
       "desktop_auto.py"
-    ),
-
-    path.join(
-      appPath,
-      relativeScriptPath
     ),
 
     path.join(
@@ -1782,10 +1980,22 @@ function getVpnAutomationScriptPath() {
       "app.asar.unpacked",
       relativeScriptPath
     ),
+
+    path.join(
+      __dirname,
+      "vpn-auto",
+      "desktop_auto.py"
+    ),
+
+    path.join(
+      appPath,
+      relativeScriptPath
+    ),
   ];
 
   return candidates.find(
     (candidate) =>
+      !isAsarVirtualPath(candidate) &&
       fs.existsSync(
         candidate
       )
@@ -1843,6 +2053,15 @@ function startPythonVpnAutomation(
     return null;
   }
 
+  console.log(
+    "Starting Python VPN automation.",
+    {
+      vpnName:
+        safeVpnName,
+      scriptPath,
+    }
+  );
+
   const scriptArgs = [
     scriptPath,
     "--vpn-name",
@@ -1870,6 +2089,14 @@ function startPythonVpnAutomation(
             "pipe",
             "pipe",
           ],
+        }
+      );
+
+      console.log(
+        "Python VPN automation process requested.",
+        {
+          command,
+          args,
         }
       );
     } catch (error) {
@@ -1933,6 +2160,14 @@ function startPythonVpnAutomation(
     child.once(
       "exit",
       (code) => {
+        console.log(
+          "Python VPN automation exited.",
+          {
+            code,
+            stopped,
+          }
+        );
+
         if (
           !stopped &&
           code &&
@@ -2026,6 +2261,14 @@ function openWindowsVpnConnection(
             return;
           }
 
+          console.log(
+            "Native VPN window command finished.",
+            {
+              vpnName:
+                safeVpnName,
+            }
+          );
+
           resolve(true);
         }
       );
@@ -2052,11 +2295,28 @@ ipcMain.handle(
         safeVpnName
       );
 
+    console.log(
+      "VPN connect requested.",
+      {
+        vpnName:
+          safeVpnName,
+        initialStatus,
+      }
+    );
+
     if (
       initialStatus &&
       initialStatus.toLowerCase() ===
         "connected"
     ) {
+      console.log(
+        "VPN already connected.",
+        {
+          vpnName:
+            safeVpnName,
+        }
+      );
+
       return {
         success: true,
 
@@ -2079,6 +2339,14 @@ ipcMain.handle(
         safeVpnName
       );
 
+      console.log(
+        "Waiting for VPN status to become connected.",
+        {
+          vpnName:
+            safeVpnName,
+        }
+      );
+
       for (
         let attempt = 0;
         attempt < 120;
@@ -2094,6 +2362,16 @@ ipcMain.handle(
           status.toLowerCase() ===
             "connected"
         ) {
+          console.log(
+            "VPN connected.",
+            {
+              vpnName:
+                safeVpnName,
+              attempt:
+                attempt + 1,
+            }
+          );
+
           return {
             success: true,
 
@@ -2114,6 +2392,14 @@ ipcMain.handle(
             )
         );
       }
+
+      console.warn(
+        "VPN connection timed out.",
+        {
+          vpnName:
+            safeVpnName,
+        }
+      );
 
       throw new Error(
         `A VPN "${safeVpnName}" não foi conectada dentro de 120 segundos.`
