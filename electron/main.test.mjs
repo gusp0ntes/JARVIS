@@ -25,7 +25,7 @@ function setup({ mainDirectory = directory } = {}) {
     constructor() {
       super();
       this.destroyed = false;
-      this.webContents = Object.assign(new EventEmitter(), { setWindowOpenHandler() {} });
+      this.webContents = Object.assign(new EventEmitter(), { setWindowOpenHandler() {}, send: vi.fn() });
       windows.push(this);
     }
     isDestroyed() { return this.destroyed; }
@@ -49,10 +49,17 @@ function setup({ mainDirectory = directory } = {}) {
     if (!prevented) windows.forEach((window) => window.close());
   });
   const handlers = new Map();
+  const updater = Object.assign(new EventEmitter(), {
+    checkForUpdates: vi.fn(async () => updater.emit("update-available", { version: "1.5.0" })),
+    downloadUpdate: vi.fn(async () => updater.emit("update-downloaded", { version: "1.5.0" })),
+    quitAndInstall: vi.fn(() => app.quit()),
+  });
+  const dialog = { showMessageBox: vi.fn(async () => ({ response: 0 })) };
   const processManager = { stopAll: vi.fn(() => Promise.resolve()), killProcess: vi.fn() };
   const context = vm.createContext({
     require: (name) => {
-      if (name === "electron") return { app, BrowserWindow: Window, nativeImage: { createFromPath: () => ({ isEmpty: () => false }) }, ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) } };
+      if (name === "electron") return { app, dialog, BrowserWindow: Window, nativeImage: { createFromPath: () => ({ isEmpty: () => false }) }, ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) } };
+      if (name === "electron-updater") return { autoUpdater: updater };
       if (name === "./process-manager.cjs") return { createProcessManager: () => processManager };
       if (name === "fs") return { ...fs, mkdirSync() {}, appendFileSync() {} };
       return require(name);
@@ -69,7 +76,7 @@ function setup({ mainDirectory = directory } = {}) {
   const main = new Window();
   context.testMain = main;
   vm.runInContext("mainWindow = testMain", context);
-  return { app, main, handlers, context, processManager, windows };
+  return { app, main, handlers, context, processManager, windows, updater, dialog };
 }
 
 afterEach(() => vi.useRealTimers());
@@ -123,6 +130,32 @@ describe("browser tabs", () => {
 });
 
 describe("desktop application lifecycle", () => {
+  it("allows update actions only from the main renderer", () => {
+    const { main, handlers } = setup();
+    for (const channel of ["get-update-state", "check-for-updates", "download-update", "install-update"]) {
+      expect(() => handlers.get(channel)({ sender: {} })).toThrow("nesta janela");
+    }
+    expect(handlers.get("get-update-state")({ sender: main.webContents }).currentVersion).toBe("test");
+  });
+
+  it("cleans up the profile normally when installing a confirmed update", async () => {
+    vi.useFakeTimers();
+    const { main, handlers, context, processManager, updater, dialog } = setup();
+    const event = { sender: main.webContents };
+    await handlers.get("check-for-updates")(event);
+    await handlers.get("download-update")(event);
+    dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
+    await handlers.get("install-update")(event);
+    expect(updater.quitAndInstall).not.toHaveBeenCalled();
+    await handlers.get("install-update")(event);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(dialog.showMessageBox).toHaveBeenCalledTimes(2);
+    expect(updater.quitAndInstall).toHaveBeenCalledExactlyOnceWith(false, true);
+    expect(processManager.stopAll).toHaveBeenCalledTimes(1);
+    expect(vm.runInContext("shutdownComplete", context)).toBe(true);
+    expect(main.isDestroyed()).toBe(true);
+  });
+
   it("resolves native scripts outside the packaged ASAR archive", () => {
     const resources = path.join(directory, "release", "resources");
     const { context } = setup({ mainDirectory: path.join(resources, "app.asar", "electron") });

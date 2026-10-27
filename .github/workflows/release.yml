@@ -1,0 +1,66 @@
+name: Publish Windows release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Check release version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($env:RELEASE_TAG -ne "v$version" -or $version -notmatch '^\d+\.\d+\.\d+$') {
+            throw 'The tag must match the stable version in package.json.'
+          }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - name: Build installer and update metadata
+        run: npm run dist -- --win --x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-${{ github.ref_name }}-windows
+          path: |
+            release/JARVIS-Setup-*.exe
+            release/JARVIS-Setup-*.exe.blockmap
+            release/latest.yml
+          if-no-files-found: error
+      - name: Publish complete release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $assets = @("release/JARVIS-Setup-$version.exe", "release/JARVIS-Setup-$version.exe.blockmap", 'release/latest.yml')
+          foreach ($asset in $assets) {
+            if (-not (Test-Path -LiteralPath $asset -PathType Leaf)) { throw "Missing release asset: $asset" }
+          }
+          $existing = gh release view $env:RELEASE_TAG --json isDraft 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            if (-not ($existing | ConvertFrom-Json).isDraft) { throw 'This release is already published.' }
+            gh release upload $env:RELEASE_TAG @assets --clobber
+          } else {
+            gh release create $env:RELEASE_TAG @assets --verify-tag --title "JARVIS $version" --generate-notes --draft
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to upload the release assets.' }
+          gh release edit $env:RELEASE_TAG --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to publish the release.' }

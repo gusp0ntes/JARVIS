@@ -14,6 +14,7 @@ const util = require("util");
 const childProcess = require("child_process");
 const { createProcessManager } = require("./process-manager.cjs");
 const { getPackagedApplicationId, isApplicationPath } = require("./application-path.cjs");
+const { createUpdateManager } = require("./update-manager.cjs");
 const processManager = createProcessManager();
 const { spawn, execFile } = processManager;
 let shuttingDown = false;
@@ -84,6 +85,47 @@ const rendererIndex = path.join(
   "dist",
   "index.html"
 );
+
+const updateManager = createUpdateManager({
+  currentVersion: app.getVersion(),
+  enabled: app.isPackaged && process.platform === "win32",
+  getUpdater: () => require("electron-updater").autoUpdater,
+  isShuttingDown: () => shuttingDown,
+  notify: (state) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("update-state", state);
+    }
+  },
+  confirmInstall: async (version) => {
+    if (!mainWindow || mainWindow.isDestroyed() || shuttingDown) return false;
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: "question",
+      title: "Atualizar JARVIS",
+      message: `Reiniciar o JARVIS para instalar a versão ${version}?`,
+      detail: "Os aplicativos e as conexões VPN iniciados pelo JARVIS serão encerrados. Suas configurações serão mantidas.",
+      buttons: ["Reiniciar e instalar", "Depois"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+    return response === 0;
+  },
+});
+
+// Update actions are exposed only to the main window, never the notification renderer.
+for (const [channel, action] of [
+  ["get-update-state", "getState"],
+  ["check-for-updates", "check"],
+  ["download-update", "download"],
+  ["install-update", "install"],
+]) {
+  ipcMain.handle(channel, (event) => {
+    if (!mainWindow || event.sender !== mainWindow.webContents || shuttingDown) {
+      throw new Error("A atualização não está disponível nesta janela.");
+    }
+    return updateManager[action]();
+  });
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -3242,6 +3284,7 @@ ipcMain.handle(
 
 app.whenReady().then(() => {
   createWindow();
+  updateManager.start();
 
   const config =
     loadConfig();
@@ -3281,6 +3324,7 @@ app.on(
       return;
     }
     shuttingDown = true;
+    updateManager.dispose();
     clearCounterNotificationTimers();
     pendingNotification = null;
     notificationReady = false;

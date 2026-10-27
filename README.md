@@ -21,6 +21,7 @@ O projeto não depende de um contexto pessoal específico. Um perfil pode repres
 * Seleção de navegador detectado no sistema.
 * Abertura automática de várias abas, com opção de adicionar e remover URLs.
 * Seções das configurações recolhidas ao abrir o painel.
+* Aviso de novas versões, download com progresso e instalação após confirmação.
 * Detecção de conexões VPN do Windows.
 * Integração com VPN usando ferramentas nativas do Windows.
 * Automação auxiliar do pop-up de VPN usando Python separado.
@@ -200,6 +201,24 @@ O instalador é criado em:
 ```text
 release/
 ```
+
+## Atualizações do aplicativo
+
+O aplicativo instalado no Windows verifica novas versões dez segundos após abrir e a cada seis horas. Também é possível consultar manualmente em **Configurações → Verificar atualizações**.
+
+Quando uma versão está disponível, o JARVIS mostra **Atualizar agora** e **Depois**. O download começa ao escolher atualizar. Ao terminar, **Reiniciar e instalar** pede confirmação antes de reiniciar; os aplicativos e as conexões VPN iniciados pelo perfil são encerrados pelo fluxo normal. Fechar o JARVIS sem escolher instalar não instala a atualização automaticamente. As configurações locais são mantidas.
+
+As atualizações vêm das Releases públicas de `gusp0ntes/JARVIS`, sem cadastro ou senha. No desenvolvimento, a instalação de atualizações fica desabilitada. Para habilitar esse recurso em instalações anteriores à versão 1.4.0, instale manualmente a versão 1.4.0 uma vez.
+
+Para publicar uma próxima versão:
+
+1. Atualize a versão em `package.json` e `package-lock.json` com `npm version minor --no-git-tag-version` (ou `patch`).
+2. Faça commit e push das alterações validadas.
+3. Crie e envie a tag correspondente, por exemplo `git tag v1.5.0` e `git push origin v1.5.0`.
+
+O workflow `.github/workflows/release.yml` valida a versão da tag, executa lint e testes, gera o instalador e publica o `.exe`, `.blockmap` e `latest.yml` juntos no GitHub Releases. A Release só se torna pública depois que todos os arquivos foram enviados. O token usado pelo workflow permanece no GitHub Actions e não vai dentro do aplicativo.
+
+`npm run dist` gera os arquivos locais em `release/` sem publicá-los. Fazer push apenas da branch não cria uma atualização para os usuários; a publicação é acionada pela tag.
 
 ## Qualidade e testes
 

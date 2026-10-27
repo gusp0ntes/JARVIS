@@ -103,6 +103,11 @@ export interface NotificationData {
 }
 
 export interface JarvisAPI {
+  getUpdateState(): Promise<UpdateState>;
+  checkForUpdates(): Promise<UpdateState>;
+  downloadUpdate(): Promise<UpdateState>;
+  installUpdate(): Promise<UpdateState>;
+  onUpdateState(callback: (state: UpdateState) => void): () => void;
   minimizeWindow(): Promise<boolean>;
   closeWindow(): Promise<boolean>;
   getConfig(): Promise<JarvisConfig>;
@@ -119,6 +124,17 @@ export interface JarvisAPI {
   showNotification(notification: Partial<NotificationData>): Promise<boolean>;
   closeNotification(): Promise<boolean>;
   onNotification(callback: (data: NotificationData) => void): () => void;
+}
+
+export interface UpdateState {
+  status: "disabled" | "idle" | "checking" | "up-to-date" | "available"
+    | "downloading" | "downloaded" | "installing" | "error";
+  currentVersion: string;
+  availableVersion: string | null;
+  progress: number;
+  message: string | null;
+  canDownload: boolean;
+  canInstall: boolean;
 }
 
 declare global {

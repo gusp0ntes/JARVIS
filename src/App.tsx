@@ -9,6 +9,8 @@ import { CounterTime } from "./components/CounterTime";
 import { IconButton } from "./components/IconButton";
 import { NotificationWindow } from "./components/NotificationWindow";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { UpdateNotice } from "./components/UpdateNotice";
+import { useUpdates } from "./updates";
 import { validateCounterSchedule } from "./time";
 import type {
   Application,
@@ -87,6 +89,8 @@ function createAppearanceStyle(appearance: AppearanceConfig) {
 }
 
 function JarvisApp() {
+  const updates = useUpdates();
+  const installingUpdate = updates.state?.status === "installing";
   const [enabled, setEnabled] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -509,7 +513,7 @@ function JarvisApp() {
   }
 
   async function toggleJarvis() {
-    if (loading || closing) {
+    if (loading || closing || installingUpdate) {
       return;
     }
 
@@ -662,7 +666,7 @@ function JarvisApp() {
         <button
           className={`toggle ${enabled ? "active" : ""}`}
           onClick={toggleJarvis}
-          disabled={loading || closing}
+          disabled={loading || closing || installingUpdate}
         >
           <span className="toggle-circle">
             {enabled ? <Check size={18} strokeWidth={2.8} aria-hidden="true" /> : null}
@@ -716,6 +720,8 @@ function JarvisApp() {
           detectingApplications={detectingApplications}
           closing={closing}
           saving={saving}
+          updateState={updates.state}
+          onCheckForUpdates={updates.check}
           onAddApplication={addApplication}
           onAddManualApplication={addManualApplication}
           onBrowserChange={changeBrowser}
@@ -740,6 +746,17 @@ function JarvisApp() {
           onTestNotification={testNotification}
           onVpnEnabledChange={(enabled) => updateVpn({ enabled })}
           onVpnNameChange={(name) => updateVpn({ name })}
+        />
+      )}
+
+      {updates.visible && updates.state && (
+        <UpdateNotice
+          state={updates.state}
+          busy={loading || closing || saving}
+          onCheck={updates.check}
+          onDownload={updates.download}
+          onInstall={updates.install}
+          onDismiss={updates.dismiss}
         />
       )}
     </main>

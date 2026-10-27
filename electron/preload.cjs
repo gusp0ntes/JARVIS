@@ -39,6 +39,17 @@ contextBridge.exposeInMainWorld(
         config
       ),
 
+    getUpdateState: () => ipcRenderer.invoke("get-update-state"),
+    checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+    downloadUpdate: () => ipcRenderer.invoke("download-update"),
+    installUpdate: () => ipcRenderer.invoke("install-update"),
+    onUpdateState: (callback) => {
+      if (typeof callback !== "function") return () => {};
+      const listener = (_event, state) => callback(state);
+      ipcRenderer.on("update-state", listener);
+      return () => ipcRenderer.removeListener("update-state", listener);
+    },
+
     /*
     |--------------------------------------------------------------------------
     | PROGRAMAS

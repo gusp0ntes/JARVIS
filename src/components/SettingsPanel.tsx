@@ -26,6 +26,7 @@ import type {
   JarvisConfig,
   NotificationMessage,
   ProfileConfig,
+  UpdateState,
 } from "../types";
 import { validateCounterSchedule } from "../time";
 import { IconButton } from "./IconButton";
@@ -165,6 +166,8 @@ interface SettingsPanelProps {
   detectingApplications: boolean;
   closing: boolean;
   saving: boolean;
+  updateState: UpdateState | null;
+  onCheckForUpdates: () => Promise<void>;
   onAddApplication: (application: Application) => void;
   onAddManualApplication: () => void | Promise<void>;
   onBrowserChange: (browserPath: string) => void;
@@ -200,6 +203,8 @@ export function SettingsPanel({
   detectingApplications,
   closing,
   saving,
+  updateState,
+  onCheckForUpdates,
   onAddApplication,
   onAddManualApplication,
   onBrowserChange,
@@ -308,6 +313,28 @@ export function SettingsPanel({
       </div>
 
       <div className="settings-content">
+        <div className="updates-settings">
+          <div>
+            <strong>JARVIS {updateState ? `v${updateState.currentVersion}` : ""}</strong>
+            <span>
+              {updateState?.status === "disabled" ? "Atualizações disponíveis no aplicativo instalado."
+                : updateState?.status === "up-to-date" ? "Você está na versão mais recente."
+                  : updateState?.status === "error" ? updateState.message
+                    : updateState?.availableVersion ? `Nova versão: ${updateState.availableVersion}`
+                      : "Verificação automática de novas versões."}
+            </span>
+          </div>
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={!updateState || ["disabled", "checking", "installing"].includes(updateState.status)}
+            onClick={() => { void onCheckForUpdates(); }}
+          >
+            {updateState?.status === "checking" ? "Verificando..."
+              : updateState?.availableVersion ? "Ver atualização" : "Verificar atualizações"}
+          </button>
+        </div>
+
         <section className={`config-card ${expandedSections.profile ? "expanded" : "collapsed"}`}>
           <SectionHeader
             expanded={expandedSections.profile}

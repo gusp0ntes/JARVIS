@@ -1,9 +1,13 @@
 {
   "name": "jarvis",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "JARVIS - Configurable profile launcher",
   "author": "Gustavo Pontes",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gusp0ntes/JARVIS.git"
+  },
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -15,9 +19,10 @@
     "preview": "vite preview",
     "electron": "node scripts/start-electron.cjs",
     "vpn:auto:install": "py -3 -m pip install -r electron/vpn-auto/requirements.txt",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder --publish never"
   },
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "lucide-react": "^1.49.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
@@ -39,6 +44,12 @@
   "build": {
     "appId": "com.jarvis.desktop",
     "productName": "JARVIS",
+    "publish": {
+      "provider": "github",
+      "owner": "gusp0ntes",
+      "repo": "JARVIS",
+      "releaseType": "release"
+    },
     "electronDist": "node_modules/electron/dist",
     "asarUnpack": [
       "electron/vpn-auto/**/*",
