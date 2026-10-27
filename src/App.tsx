@@ -185,7 +185,7 @@ function JarvisApp() {
 
     const confirmed = window.confirm(
       enabled || loading
-        ? "Ao fechar o JARVIS, os processos iniciados por este perfil serão encerrados e a VPN configurada será desconectada. Deseja continuar?"
+        ? "Ao fechar o JARVIS, os processos e as conexões VPN iniciados por ele serão encerrados. Deseja continuar?"
         : "Deseja fechar o JARVIS?",
     );
 
@@ -196,10 +196,6 @@ function JarvisApp() {
     setClosing(true);
 
     try {
-      if (enabled || loading) {
-        await stopProfileEnvironment();
-      }
-
       const closed = await window.jarvis.closeWindow();
 
       if (!closed) {
@@ -383,7 +379,7 @@ function JarvisApp() {
     let attempted = 0;
     let succeeded = 0;
 
-    if (config.browser.enabled && config.browser.path && config.browser.url) {
+    if (config.browser.enabled && config.browser.path && config.browser.urls.some((url) => url.trim())) {
       attempted++;
 
       try {
@@ -480,10 +476,10 @@ function JarvisApp() {
         });
       }
 
-      if (!config.browser.url.trim()) {
+      if (!config.browser.urls.some((url) => url.trim())) {
         issues.push({
           target: "Navegador",
-          message: "Informe a URL inicial do navegador.",
+          message: "Informe ao menos uma URL para abrir no navegador.",
         });
       }
     }
@@ -724,7 +720,7 @@ function JarvisApp() {
           onAddManualApplication={addManualApplication}
           onBrowserChange={changeBrowser}
           onBrowserEnabledChange={(enabled) => updateBrowser({ enabled })}
-          onBrowserUrlChange={(url) => updateBrowser({ url })}
+          onBrowserUrlsChange={(urls) => updateBrowser({ urls })}
           onClose={() => setSettingsOpen(false)}
           onCounterBreakEnabledChange={(breakEnabled) => updateCounterTime({ breakEnabled })}
           onCounterEnabledChange={(enabled) => updateCounterTime({ enabled })}

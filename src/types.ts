@@ -9,7 +9,7 @@ export interface BrowserConfig {
   enabled: boolean;
   name: string;
   path: string;
-  url: string;
+  urls: string[];
 }
 
 export interface VPNConfig {

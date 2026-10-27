@@ -169,7 +169,7 @@ interface SettingsPanelProps {
   onAddManualApplication: () => void | Promise<void>;
   onBrowserChange: (browserPath: string) => void;
   onBrowserEnabledChange: (enabled: boolean) => void;
-  onBrowserUrlChange: (url: string) => void;
+  onBrowserUrlsChange: (urls: string[]) => void;
   onClose: () => void;
   onCounterBreakEnabledChange: (breakEnabled: boolean) => void;
   onCounterEnabledChange: (enabled: boolean) => void;
@@ -204,7 +204,7 @@ export function SettingsPanel({
   onAddManualApplication,
   onBrowserChange,
   onBrowserEnabledChange,
-  onBrowserUrlChange,
+  onBrowserUrlsChange,
   onClose,
   onCounterBreakEnabledChange,
   onCounterEnabledChange,
@@ -225,9 +225,16 @@ export function SettingsPanel({
   onVpnEnabledChange,
   onVpnNameChange,
 }: SettingsPanelProps) {
+  const [applicationSearch, setApplicationSearch] = useState("");
+  const searchTerm = applicationSearch.trim().toLocaleLowerCase("pt-BR");
+  const filteredApplications = detectedApplications.filter((application) =>
+    `${application.name} ${application.executable} ${application.path}`
+      .toLocaleLowerCase("pt-BR").includes(searchTerm),
+  );
   const [expandedSections, setExpandedSections] = useState<
     Record<SettingsSectionKey, boolean>
-  >(() => createExpandedSections(true));
+  >(() => createExpandedSections(false));
+  const browserUrls = config.browser.urls.length > 0 ? config.browser.urls : [""];
   const scheduleValidation = validateCounterSchedule(
     config.counterTime.schedule,
     config.counterTime.breakEnabled,
@@ -458,7 +465,7 @@ export function SettingsPanel({
             hidden={!expandedSections.applications}
           >
             <p className="card-description">
-              Aplicativos iniciados quando este perfil for ativado.
+              Escolha os aplicativos do perfil ou adicione um arquivo .exe manualmente.
             </p>
 
             <div className="application-list">
@@ -527,10 +534,22 @@ export function SettingsPanel({
 
             {detectedApplications.length > 0 && (
               <div className="detected">
-                <div className="detected-title">Aplicativos encontrados</div>
+                <div className="detected-title">Aplicativos encontrados ({detectedApplications.length})</div>
+
+                <input
+                  className="field"
+                  type="search"
+                  aria-label="Buscar aplicativos encontrados"
+                  placeholder="Buscar por nome ou executável"
+                  value={applicationSearch}
+                  onChange={(event) => setApplicationSearch(event.target.value)}
+                />
 
                 <div className="detected-list">
-                  {detectedApplications.map((application) => {
+                  {filteredApplications.length === 0 && (
+                    <div className="empty">Nenhum aplicativo corresponde à busca.</div>
+                  )}
+                  {filteredApplications.map((application) => {
                     const exists = applications.some(
                       (item) => item.path.toLowerCase() === application.path.toLowerCase(),
                     );
@@ -539,6 +558,7 @@ export function SettingsPanel({
                       <button
                         className="detected-item"
                         key={application.path}
+                        title={`${application.name}\n${application.path}`}
                         disabled={exists}
                         onClick={() => onAddApplication(application)}
                       >
@@ -582,7 +602,7 @@ export function SettingsPanel({
             hidden={!expandedSections.browser}
           >
             <p className="card-description">
-              Abra automaticamente um navegador e uma URL ao iniciar.
+              Abra automaticamente as páginas configuradas em abas do navegador ao iniciar.
             </p>
 
             <label className="field-label">Navegador</label>
@@ -601,15 +621,49 @@ export function SettingsPanel({
               ))}
             </select>
 
-            <label className="field-label">URL de inicialização</label>
+            {browserUrls.map((url, index) => (
+              <div key={index}>
+                <label className="field-label" htmlFor={`browser-tab-${index}`}>
+                  Aba {index + 1}
+                </label>
 
-            <input
-              className="field"
-              type="text"
-              placeholder="https://exemplo.com"
-              value={config.browser.url}
-              onChange={(event) => onBrowserUrlChange(event.target.value)}
-            />
+                <div className="browser-tab-url">
+                  <input
+                    className="field"
+                    id={`browser-tab-${index}`}
+                    type="text"
+                    inputMode="url"
+                    placeholder="https://exemplo.com"
+                    value={url}
+                    onChange={(event) => onBrowserUrlsChange(
+                      browserUrls.map((current, currentIndex) =>
+                        currentIndex === index ? event.target.value : current,
+                      ),
+                    )}
+                  />
+
+                  {browserUrls.length > 1 && (
+                    <IconButton
+                      className="remove-button"
+                      onClick={() => onBrowserUrlsChange(
+                        browserUrls.filter((_, currentIndex) => currentIndex !== index),
+                      )}
+                      label={`Remover aba ${index + 1}`}
+                      icon={<Trash2 size={15} strokeWidth={2.2} aria-hidden="true" />}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+
+            <button
+              className="secondary-button full"
+              type="button"
+              onClick={() => onBrowserUrlsChange([...browserUrls, ""])}
+            >
+              <Plus size={17} strokeWidth={2.4} aria-hidden="true" />
+              Adicionar aba
+            </button>
 
             {config.browser.path && <div className="path-preview">{config.browser.path}</div>}
           </div>

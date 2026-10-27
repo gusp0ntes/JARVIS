@@ -7,7 +7,7 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && node scripts/start-electron.cjs\"",
+    "dev": "concurrently --kill-others \"vite\" \"wait-on http://localhost:5173 && node scripts/start-electron.cjs\"",
     "typecheck": "tsc -b",
     "lint": "oxlint . --ignore-path .gitignore",
     "test": "vitest run",
@@ -41,7 +41,8 @@
     "productName": "JARVIS",
     "electronDist": "node_modules/electron/dist",
     "asarUnpack": [
-      "electron/vpn-auto/**/*"
+      "electron/vpn-auto/**/*",
+      "electron/*.ps1"
     ],
     "directories": {
       "output": "release"
@@ -49,9 +50,22 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "build/icon.png",
+      "build/icon.ico",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "build/icon.ico",
+        "to": "build/icon.ico"
+      },
+      {
+        "from": "build/icon.png",
+        "to": "build/icon.png"
+      }
+    ],
     "win": {
+      "icon": "build/icon.ico",
       "target": "nsis",
       "artifactName": "JARVIS-Setup-${version}.${ext}"
     },
@@ -60,6 +74,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
       "shortcutName": "JARVIS"
     }
   }

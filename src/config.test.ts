@@ -3,6 +3,30 @@ import { describe, expect, it } from "vitest";
 import { defaultConfig, normalizeConfig } from "./config";
 
 describe("normalizeConfig", () => {
+  it("migrates an existing browser URL without losing the configured page", () => {
+    const config = normalizeConfig({ browser: { url: " https://exemplo.com/inicio " } });
+
+    expect(config.browser.urls).toEqual(["https://exemplo.com/inicio"]);
+    expect(normalizeConfig(config).browser.urls).toEqual(config.browser.urls);
+  });
+
+  it("keeps browser tabs in order across saves and ignores empty or malformed entries", () => {
+    const config = normalizeConfig({
+      browser: {
+        urls: [" https://exemplo.com ", "", null, 42, "https://outro.com/pagina"],
+      },
+    } as never);
+
+    expect(config.browser.urls).toEqual(["https://exemplo.com", "https://outro.com/pagina"]);
+    expect(normalizeConfig(JSON.parse(JSON.stringify(config))).browser.urls)
+      .toEqual(config.browser.urls);
+  });
+
+  it("does not restore a removed legacy URL when the tab list is empty", () => {
+    expect(normalizeConfig({ browser: { urls: [], url: "https://antigo.com" } }).browser.urls)
+      .toEqual([]);
+  });
+
   it("fills missing profile and routine fields from defaults", () => {
     const config = normalizeConfig({
       applications: [],

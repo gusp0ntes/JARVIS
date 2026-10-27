@@ -2,7 +2,7 @@
 
 JARVIS é um aplicativo desktop para Windows que automatiza a preparação de ambientes de uso.
 
-Ele permite configurar um perfil com aplicativos, navegador, URL inicial, VPN e rotina de horários. Ao ativar esse perfil, o app executa as ações configuradas e acompanha o estado da rotina em uma interface única.
+Ele permite configurar um perfil com aplicativos, navegador, abas iniciais, VPN e rotina de horários. Ao ativar esse perfil, o app executa as ações configuradas e acompanha o estado da rotina em uma interface única.
 
 ## Contexto e proposta
 
@@ -15,10 +15,12 @@ O projeto não depende de um contexto pessoal específico. Um perfil pode repres
 * Configuração de perfil com nome e descrição.
 * Personalização visual com cor sólida ou gradiente.
 * Seleção manual de aplicativos executáveis.
-* Detecção de aplicativos a partir do Menu Iniciar do Windows.
+* Detecção de aplicativos do Menu Iniciar, Microsoft Store (incluindo o novo Teams), registro do Windows e pastas de instalação.
+* Busca dos aplicativos detectados por nome, executável ou caminho.
 * Inicialização automática dos aplicativos configurados.
 * Seleção de navegador detectado no sistema.
-* Abertura automática de uma URL inicial.
+* Abertura automática de várias abas, com opção de adicionar e remover URLs.
+* Seções das configurações recolhidas ao abrir o painel.
 * Detecção de conexões VPN do Windows.
 * Integração com VPN usando ferramentas nativas do Windows.
 * Automação auxiliar do pop-up de VPN usando Python separado.
@@ -36,12 +38,16 @@ Ao ativar um perfil, o JARVIS:
 
 1. valida a configuração atual;
 2. solicita/conecta a VPN configurada, quando habilitada;
-3. abre o navegador com a URL inicial, quando habilitado;
+3. abre o navegador com as abas configuradas, quando habilitado;
 4. inicia os aplicativos configurados;
 5. ativa o acompanhamento da rotina, quando habilitado;
 6. mostra avisos caso alguma etapa falhe parcialmente.
 
 Ao desativar o perfil, o app tenta desconectar a VPN configurada e encerrar os processos que foram iniciados por ele durante aquela sessão.
+
+Ao fechar a janela principal pelo X ou por Alt+F4, o JARVIS encerra também a janela oculta de notificações, os agendamentos e os processos auxiliares. Os processos do perfil ainda rastreados são encerrados e as VPNs cuja conexão foi solicitada pelo JARVIS são desconectadas. Aplicativos da Microsoft Store que já estavam abertos antes da ativação são preservados.
+
+A detecção de executáveis procura nas pastas de instalação mais comuns, no Desktop e nos locais registrados pelos instaladores, com limites de tempo e profundidade. Executáveis portáteis em outras pastas podem ser adicionados pelo botão de adicionar aplicativo.
 
 ## Demonstração da aplicação
 
@@ -217,6 +223,9 @@ Os testes unitários atuais cobrem:
 * cálculo da rotina sem pausa;
 * rotinas que atravessam a meia-noite;
 * validação de horários inválidos.
+* validação de executáveis e identificadores de aplicativos da Microsoft Store;
+* encerramento da janela principal com notificações ocultas e comandos pendentes;
+* encerramento das árvores de processos auxiliares e bloqueio de novas tarefas durante a saída.
 
 ## Decisões de arquitetura
 

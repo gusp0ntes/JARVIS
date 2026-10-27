@@ -5,12 +5,20 @@ const {
   shell,
   dialog,
   screen,
+  nativeImage,
 } = require("electron");
 
 const path = require("path");
 const fs = require("fs");
 const util = require("util");
-const { spawn, execFile } = require("child_process");
+const childProcess = require("child_process");
+const { createProcessManager } = require("./process-manager.cjs");
+const { getPackagedApplicationId, isApplicationPath } = require("./application-path.cjs");
+const processManager = createProcessManager();
+const { spawn, execFile } = processManager;
+let shuttingDown = false;
+let shutdownComplete = false;
+const profileVpns = new Set();
 
 let mainWindow = null;
 let notificationWindow = null;
@@ -27,6 +35,20 @@ const notificationTimers = new Map();
 */
 
 const isDev = !app.isPackaged;
+const appUserModelId = "com.jarvis.desktop";
+
+app.setName(
+  "JARVIS"
+);
+
+if (
+  process.platform ===
+  "win32"
+) {
+  app.setAppUserModelId(
+    appUserModelId
+  );
+}
 
 if (isDev) {
   const devUserDataDirectory = path.join(
@@ -174,7 +196,7 @@ const defaultConfig = {
     enabled: false,
     name: "",
     path: "",
-    url: "",
+    urls: [],
   },
 
   vpn: {
@@ -293,7 +315,7 @@ function isExecutablePath(value) {
 }
 
 function sanitizeApplication(value) {
-  if (!isPlainObject(value) || !isExecutablePath(value.path)) {
+  if (!isPlainObject(value) || !isApplicationPath(value.path)) {
     return null;
   }
 
@@ -378,7 +400,10 @@ function sanitizeConfig(value) {
       enabled: sanitizeBoolean(safeBrowser.enabled, defaultConfig.browser.enabled),
       name: sanitizeString(safeBrowser.name, defaultConfig.browser.name, 120),
       path: isExecutablePath(browserPath) ? browserPath : "",
-      url: sanitizeString(safeBrowser.url, defaultConfig.browser.url, 2048),
+      urls: (Array.isArray(safeBrowser.urls) ? safeBrowser.urls : [safeBrowser.url])
+        .filter((url) => typeof url === "string")
+        .map((url) => sanitizeString(url, "", 2048).trim())
+        .filter(Boolean),
     },
 
     vpn: {
@@ -679,20 +704,18 @@ function hardenRendererWindow(window) {
 
   window.webContents.on(
     "console-message",
-    (
-      _event,
-      level,
-      message,
-      line,
-      sourceId
-    ) => {
+    (details) => {
       console.log(
         "Renderer console message.",
         {
-          level,
-          message,
-          line,
-          sourceId,
+          level:
+            details.level,
+          message:
+            details.message,
+          line:
+            details.lineNumber,
+          sourceId:
+            details.sourceId,
         }
       );
     }
@@ -714,10 +737,107 @@ function hardenRendererWindow(window) {
 |--------------------------------------------------------------------------
 */
 
+function getAppIconPath() {
+  const iconFileName =
+    process.platform ===
+    "win32"
+      ? "icon.ico"
+      : "icon.png";
+
+  const fallbackIconFileName =
+    process.platform ===
+    "win32"
+      ? "icon.png"
+      : "icon.ico";
+
+  const candidates = [
+    path.join(
+      process.resourcesPath || "",
+      "build",
+      iconFileName
+    ),
+
+    path.join(
+      app.getAppPath(),
+      "build",
+      iconFileName
+    ),
+
+    path.join(
+      __dirname,
+      "..",
+      "build",
+      iconFileName
+    ),
+
+    path.join(
+      app.getAppPath(),
+      "build",
+      fallbackIconFileName
+    ),
+
+    path.join(
+      __dirname,
+      "..",
+      "build",
+      fallbackIconFileName
+    ),
+
+    path.join(
+      process.resourcesPath || "",
+      "build",
+      fallbackIconFileName
+    ),
+
+    path.join(
+      app.getAppPath(),
+      "dist",
+      "favicon.png"
+    ),
+  ];
+
+  return candidates.find(
+    (candidate) =>
+      fs.existsSync(
+        candidate
+      )
+  );
+}
+
+function getAppIcon() {
+  const iconPath =
+    getAppIconPath();
+
+  if (!iconPath) {
+    return null;
+  }
+
+  const icon =
+    nativeImage.createFromPath(
+      iconPath
+    );
+
+  if (icon.isEmpty()) {
+    console.warn(
+      "App icon could not be loaded.",
+      {
+        iconPath,
+      }
+    );
+
+    return null;
+  }
+
+  return icon;
+}
+
 function createWindow() {
-  if (mainWindow) {
+  if (mainWindow || shuttingDown) {
     return;
   }
+
+  const appIcon =
+    getAppIcon();
 
   mainWindow = new BrowserWindow({
     width: 560,
@@ -735,6 +855,9 @@ function createWindow() {
     transparent: true,
 
     backgroundColor: "#00000000",
+
+    icon:
+      appIcon || undefined,
 
     show: false,
 
@@ -755,6 +878,12 @@ function createWindow() {
       allowRunningInsecureContent: false,
     },
   });
+
+  if (appIcon) {
+    mainWindow.setIcon(
+      appIcon
+    );
+  }
 
   hardenRendererWindow(
     mainWindow
@@ -781,6 +910,13 @@ function createWindow() {
     );
   });
 
+  mainWindow.on("close", (event) => {
+    if (!shutdownComplete) {
+      event.preventDefault();
+      app.quit();
+    }
+  });
+
   mainWindow.on(
     "closed",
     () => {
@@ -796,6 +932,9 @@ function createWindow() {
 */
 
 function createNotificationWindow() {
+  if (shuttingDown) {
+    return;
+  }
   if (
     notificationWindow &&
     !notificationWindow.isDestroyed()
@@ -970,6 +1109,9 @@ function showJarvisNotification({
   duration = 5,
   sound = true,
 }) {
+  if (shuttingDown) {
+    return;
+  }
   const data = {
     type: type || "info",
 
@@ -1065,7 +1207,11 @@ ipcMain.handle(
       window &&
       !window.isDestroyed()
     ) {
-      window.close();
+      if (window === mainWindow) {
+        app.quit();
+      } else {
+        window.close();
+      }
 
       return true;
     }
@@ -1316,6 +1462,13 @@ ipcMain.handle(
   "launch-program",
   async (_, programPath) => {
     try {
+      if (shuttingDown || !isApplicationPath(programPath)) {
+        throw new Error("Informe um aplicativo válido ou aguarde o encerramento do JARVIS.");
+      }
+      const appId = getPackagedApplicationId(programPath);
+      if (appId) {
+        return await launchPackagedApplication(programPath, appId);
+      }
       const safeProgramPath =
         requireExecutablePath(
           programPath
@@ -1346,37 +1499,55 @@ ipcMain.handle(
 */
 
 function killProcessByPid(pid) {
-  return new Promise(
-    (resolve) => {
-      const safePid =
-        Number(pid);
+  return processManager.killProcess(Number(pid));
+}
 
-      if (
-        !Number.isInteger(safePid) ||
-        safePid <= 0
-      ) {
-        resolve(false);
+function getPowerShellScriptPath(fileName) {
+  const scriptDirectory = path.normalize(__dirname).split(path.sep)
+    .map((segment) => segment === "app.asar" ? "app.asar.unpacked" : segment)
+    .join(path.sep);
+  return path.join(scriptDirectory, fileName);
+}
 
-        return;
-      }
+function runPackagedApplication(args, run = execFile) {
+  return new Promise((resolve, reject) => {
+    run("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+      "-File", getPowerShellScriptPath("packaged-application.ps1"), ...args], {
+      windowsHide: true,
+      encoding: "utf8",
+      timeout: args.includes("Stop") ? 4000 : 15000,
+    }, (error, stdout) => error ? reject(error) : resolve(stdout));
+  });
+}
 
-      execFile(
-        "taskkill",
-        [
-          "/PID",
-          String(safePid),
-          "/T",
-          "/F",
-        ],
-        {
-          windowsHide: true,
-        },
-        (error) => {
-          resolve(!error);
-        }
-      );
+async function launchPackagedApplication(programPath, appId) {
+  const result = JSON.parse(await runPackagedApplication(["-AppId", appId]));
+  if (!Number.isInteger(result.pid) || result.pid <= 0) {
+    throw new Error("O Windows não retornou um processo para este aplicativo.");
+  }
+  if (result.owned) {
+    const record = { pid: result.pid, startedAt: result.startedAt, packaged: true };
+    if (shuttingDown) {
+      await stopLaunchedProcess(record);
+    } else {
+      launchedProcesses.set(`app:${programPath}`, record);
     }
-  );
+  }
+  return { success: true, pid: result.pid };
+}
+
+async function stopLaunchedProcess(record) {
+  if (!record.packaged) {
+    return killProcessByPid(record.pid);
+  }
+  try {
+    await runPackagedApplication(["-Mode", "Stop", "-ProcessId", String(record.pid),
+      "-StartedAt", record.startedAt], childProcess.execFile);
+    return true;
+  } catch (error) {
+    console.warn("Erro ao encerrar aplicativo do Windows:", error);
+    return false;
+  }
 }
 
 ipcMain.handle(
@@ -1408,9 +1579,7 @@ ipcMain.handle(
       await Promise.all(
         processes.map(
           (process) =>
-            killProcessByPid(
-              process.pid
-            )
+            stopLaunchedProcess(process)
         )
       );
 
@@ -1441,14 +1610,15 @@ ipcMain.handle(
     }
 
     try {
-      const url =
-        normalizeHttpUrl(
-          safeBrowser.url
-        );
+      if (safeBrowser.urls.length === 0) {
+        throw new Error("Informe ao menos uma URL para abrir no navegador.");
+      }
+
+      const urls = safeBrowser.urls.map(normalizeHttpUrl);
 
       return await launchProcess(
         safeBrowser.path,
-        [url],
+        urls,
         "browser"
       );
     } catch (error) {
@@ -2200,7 +2370,7 @@ function startPythonVpnAutomation(
         child.exitCode === null &&
         !child.killed
       ) {
-        child.kill();
+        void processManager.killChild(child);
       }
     },
   };
@@ -2334,6 +2504,8 @@ ipcMain.handle(
         safeVpnName
       );
 
+    profileVpns.add(safeVpnName);
+
     try {
       await openWindowsVpnConnection(
         safeVpnName
@@ -2352,6 +2524,9 @@ ipcMain.handle(
         attempt < 120;
         attempt++
       ) {
+        if (shuttingDown) {
+          throw new Error("O JARVIS está sendo encerrado.");
+        }
         const status =
           await getVpnStatus(
             safeVpnName
@@ -2432,6 +2607,8 @@ ipcMain.handle(
         connected: false,
       };
     }
+
+    profileVpns.delete(safeVpnName);
 
     return new Promise(
       (resolve) => {
@@ -2707,6 +2884,9 @@ async function shortcutToApplication(
 function uniqueApplications(
   applications
 ) {
+  const packagedExecutables = new Set(applications
+    .filter((application) => application && getPackagedApplicationId(application.path) && application.iconPath)
+    .map((application) => application.iconPath.toLowerCase()));
   const unique =
     new Map();
 
@@ -2718,6 +2898,10 @@ function uniqueApplications(
       continue;
     }
 
+    if (!getPackagedApplicationId(application.path) && packagedExecutables.has(application.path.toLowerCase())) {
+      continue;
+    }
+
     const key =
       application.path.toLowerCase();
 
@@ -2726,7 +2910,7 @@ function uniqueApplications(
     ) {
       unique.set(
         key,
-        application
+        sanitizeApplication(application)
       );
     }
   }
@@ -2764,18 +2948,52 @@ ipcMain.handle(
       );
     }
 
-    const applications =
-      await mapWithConcurrency(
-        shortcuts,
-        8,
-        shortcutToApplication
-      );
+    const [applications, installed] = await Promise.all([
+      mapWithConcurrency(shortcuts, 8, shortcutToApplication),
+      detectInstalledApplications(),
+    ]);
 
     return uniqueApplications(
-      applications
+      [...applications, ...installed]
     );
   }
 );
+
+function detectInstalledApplications() {
+  if (process.platform !== "win32" || shuttingDown) {
+    return Promise.resolve([]);
+  }
+  return new Promise((resolve) => {
+    execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+      "-File", getPowerShellScriptPath("windows-applications.ps1")], {
+      windowsHide: true,
+      encoding: "utf8",
+      timeout: 30000,
+      maxBuffer: 4 * 1024 * 1024,
+    }, async (error, stdout) => {
+      if (error || shuttingDown) {
+        if (!shuttingDown) console.warn("Erro ao detectar aplicativos instalados:", error);
+        resolve([]);
+        return;
+      }
+      try {
+        const candidates = JSON.parse(stdout.replace(/^\uFEFF/, ""));
+        const valid = (Array.isArray(candidates) ? candidates : [candidates])
+          .filter((candidate) => candidate && isApplicationPath(candidate.path));
+        resolve(await mapWithConcurrency(valid, 8, async (candidate) => ({
+          ...sanitizeApplication({
+            ...candidate,
+            icon: candidate.iconPath ? await getExecutableIcon(candidate.iconPath) : null,
+          }),
+          iconPath: candidate.iconPath,
+        })));
+      } catch (parseError) {
+        console.warn("Erro ao ler aplicativos instalados:", parseError);
+        resolve([]);
+      }
+    });
+  });
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -2876,6 +3094,9 @@ function scheduleCounterNotification(
   timeString,
   notificationConfig
 ) {
+  if (shuttingDown) {
+    return;
+  }
   const target =
     getNextTimeOccurrence(
       timeString
@@ -3051,10 +3272,47 @@ app.whenReady().then(() => {
 
 app.on(
   "before-quit",
-  () => {
+  (event) => {
+    if (shutdownComplete) {
+      return;
+    }
+    event.preventDefault();
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
     clearCounterNotificationTimers();
+    pendingNotification = null;
+    notificationReady = false;
+    if (notificationWindow && !notificationWindow.isDestroyed()) {
+      notificationWindow.destroy();
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.hide();
+    }
 
+    // A stuck Windows command must not keep the desktop app alive indefinitely.
+    const deadline = setTimeout(() => app.exit(0), 7000);
+    deadline.unref();
+    const packagedProcesses = Array.from(launchedProcesses.values()).filter((record) => record.packaged);
     launchedProcesses.clear();
+
+    const disconnects = Array.from(profileVpns, (vpnName) => new Promise((resolve) => {
+      childProcess.execFile("rasdial.exe", [vpnName, "/disconnect"], {
+        windowsHide: true,
+        timeout: 4000,
+      }, () => resolve());
+    }));
+    profileVpns.clear();
+
+    Promise.allSettled([
+      processManager.stopAll(),
+      ...packagedProcesses.map(stopLaunchedProcess),
+      ...disconnects,
+    ]).finally(() => {
+      shutdownComplete = true;
+      app.quit();
+    });
   }
 );
 

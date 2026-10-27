@@ -75,7 +75,7 @@ export const defaultConfig: JarvisConfig = {
     enabled: false,
     name: "",
     path: "",
-    url: "",
+    urls: [],
   },
   vpn: {
     enabled: false,
@@ -120,8 +120,9 @@ export function cloneDefaultConfig(): JarvisConfig {
   return structuredClone(defaultConfig);
 }
 
-type ConfigInput = DeepPartial<Omit<JarvisConfig, "applications">> & {
+type ConfigInput = DeepPartial<Omit<JarvisConfig, "applications" | "browser">> & {
   applications?: Application[];
+  browser?: Partial<JarvisConfig["browser"]> & { url?: string };
 };
 
 export function normalizeConfig(saved: ConfigInput | null | undefined): JarvisConfig {
@@ -164,7 +165,10 @@ export function normalizeConfig(saved: ConfigInput | null | undefined): JarvisCo
       enabled: readBoolean(browser.enabled, defaultConfig.browser.enabled),
       name: readString(browser.name, defaultConfig.browser.name, 120),
       path: readString(browser.path, defaultConfig.browser.path, 1000),
-      url: readString(browser.url, defaultConfig.browser.url, 2048),
+      urls: (Array.isArray(browser.urls) ? browser.urls : [browser.url])
+        .filter((url): url is string => typeof url === "string")
+        .map((url) => readString(url, "", 2048).trim())
+        .filter(Boolean),
     },
     vpn: {
       enabled: readBoolean(vpn.enabled, defaultConfig.vpn.enabled),
