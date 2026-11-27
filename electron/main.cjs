@@ -2152,268 +2152,31 @@ function getVpnStatus(
   );
 }
 
-function isAsarVirtualPath(filePath) {
-  return path
-    .normalize(filePath)
-    .split(path.sep)
-    .includes("app.asar");
-}
-
-function getVpnAutomationScriptPath() {
-  const relativeScriptPath = path.join(
-    "electron",
-    "vpn-auto",
-    "desktop_auto.py"
-  );
-
-  const appPath =
-    app.getAppPath();
-
-  const candidates = [
-    path.join(
-      __dirname.replace(
-        "app.asar",
-        "app.asar.unpacked"
-      ),
-      "vpn-auto",
-      "desktop_auto.py"
-    ),
-
-    path.join(
-      appPath.replace(
-        "app.asar",
-        "app.asar.unpacked"
-      ),
-      relativeScriptPath
-    ),
-
-    path.join(
-      process.resourcesPath || "",
-      "app.asar.unpacked",
-      relativeScriptPath
-    ),
-
-    path.join(
-      __dirname,
-      "vpn-auto",
-      "desktop_auto.py"
-    ),
-
-    path.join(
-      appPath,
-      relativeScriptPath
-    ),
-  ];
-
-  return candidates.find(
-    (candidate) =>
-      !isAsarVirtualPath(candidate) &&
-      fs.existsSync(
-        candidate
-      )
-  );
-}
-
-function logPythonVpnAutomationOutput(
-  stream,
-  data
-) {
-  const lines =
-    String(
-      data || ""
-    )
-      .split(/\r?\n/)
-      .map(
-        (line) =>
-          line.trim()
-      )
-      .filter(Boolean);
-
-  for (
-    const line of
-      lines
-  ) {
-    console[stream](
-      line
-    );
-  }
-}
-
-function startPythonVpnAutomation(
-  vpnName
-) {
-  if (
-    process.platform !==
-    "win32"
-  ) {
+function startVpnAutomation(vpnName) {
+  if (process.platform !== "win32") {
     return null;
   }
 
-  const safeVpnName =
-    requireVpnName(
-      vpnName
-    );
-
-  const scriptPath =
-    getVpnAutomationScriptPath();
-
-  if (!scriptPath) {
-    console.warn(
-      "Script Python de automaÃ§Ã£o da VPN nÃ£o encontrado."
-    );
-
-    return null;
-  }
-
-  console.log(
-    "Starting Python VPN automation.",
-    {
-      vpnName:
-        safeVpnName,
-      scriptPath,
-    }
-  );
-
-  const scriptArgs = [
-    scriptPath,
-    "--vpn-name",
-    safeVpnName,
-    "--timeout",
-    "120",
-  ];
-
-  let child = null;
+  const scriptPath = getPowerShellScriptPath("vpn-connect.ps1");
   let stopped = false;
-
-  function start(
-    command,
-    args,
-    allowFallback
-  ) {
-    try {
-      child = spawn(
-        command,
-        args,
-        {
-          windowsHide: true,
-          stdio: [
-            "ignore",
-            "pipe",
-            "pipe",
-          ],
-        }
-      );
-
-      console.log(
-        "Python VPN automation process requested.",
-        {
-          command,
-          args,
-        }
-      );
-    } catch (error) {
-      console.warn(
-        "NÃ£o foi possÃ­vel iniciar a automaÃ§Ã£o Python da VPN:",
-        getErrorMessage(
-          error
-        )
-      );
-
-      return;
+  const child = execFile("powershell.exe", [
+    "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath,
+  ], {
+    windowsHide: true,
+    timeout: 125_000,
+    env: { ...process.env, JARVIS_VPN_NAME: vpnName },
+  }, (error, stdout) => {
+    if (stopped) return;
+    if (stdout.trim()) console.log(stdout.trim());
+    if (error && error.code !== 2) {
+      console.warn("Windows VPN automation failed:", getErrorMessage(error));
     }
-
-    child.stdout.on(
-      "data",
-      (data) =>
-        logPythonVpnAutomationOutput(
-          "log",
-          data
-        )
-    );
-
-    child.stderr.on(
-      "data",
-      (data) =>
-        logPythonVpnAutomationOutput(
-          "warn",
-          data
-        )
-    );
-
-    child.once(
-      "error",
-      (error) => {
-        if (
-          allowFallback &&
-          error?.code ===
-            "ENOENT" &&
-          !stopped
-        ) {
-          start(
-            "python",
-            scriptArgs,
-            false
-          );
-
-          return;
-        }
-
-        if (!stopped) {
-          console.warn(
-            "AutomaÃ§Ã£o Python da VPN falhou:",
-            getErrorMessage(
-              error
-            )
-          );
-        }
-      }
-    );
-
-    child.once(
-      "exit",
-      (code) => {
-        console.log(
-          "Python VPN automation exited.",
-          {
-            code,
-            stopped,
-          }
-        );
-
-        if (
-          !stopped &&
-          code &&
-          code !== 0 &&
-          code !== 2
-        ) {
-          console.warn(
-            `AutomaÃ§Ã£o Python da VPN finalizou com cÃ³digo ${code}.`
-          );
-        }
-      }
-    );
-  }
-
-  start(
-    "py",
-    [
-      "-3",
-      ...scriptArgs,
-    ],
-    true
-  );
+  });
 
   return {
     stop() {
       stopped = true;
-
-      if (
-        child &&
-        child.exitCode === null &&
-        !child.killed
-      ) {
-        void processManager.killChild(child);
-      }
+      void processManager.killChild(child);
     },
   };
 }
@@ -2541,10 +2304,7 @@ ipcMain.handle(
       };
     }
 
-    const vpnAutomation =
-      startPythonVpnAutomation(
-        safeVpnName
-      );
+    const vpnAutomation = startVpnAutomation(safeVpnName);
 
     profileVpns.add(safeVpnName);
 

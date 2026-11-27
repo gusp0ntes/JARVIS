@@ -24,7 +24,7 @@ O projeto não depende de um contexto pessoal específico. Um perfil pode repres
 * Aviso de novas versões, download com progresso e instalação após confirmação.
 * Detecção de conexões VPN do Windows.
 * Integração com VPN usando ferramentas nativas do Windows.
-* Automação auxiliar do pop-up de VPN usando Python separado.
+* Seleção do botão **Conectar** pelo rótulo na janela nativa da VPN.
 * Rotina opcional com início, pausa, retorno e encerramento.
 * Pausa intermediária opcional.
 * Suporte a rotinas que atravessam a meia-noite.
@@ -143,14 +143,12 @@ As notificações podem ter mensagens personalizadas por evento e duração conf
 * Oxlint
 * Electron Builder
 * APIs nativas do Windows: atalhos do Menu Iniciar, `rasphone.exe`, `rasdial.exe` e `taskkill`
-* Helper Python opcional para acionar o pop-up nativo de VPN.
 
 ## Pré-requisitos
 
 * Windows
 * Node.js compatível com as dependências do projeto
 * npm
-* Python com launcher `py` para a automação auxiliar da VPN
 
 ## Execução em ambiente de desenvolvimento
 
@@ -159,22 +157,6 @@ Instale as dependências:
 ```bash
 npm install
 ```
-
-Instale as dependências Python da automação de VPN:
-
-```bash
-npm run vpn:auto:install
-```
-
-As imagens usadas pela automação de VPN ficam em:
-
-```text
-electron/vpn-auto/images/
-```
-
-O helper procura primeiro por recortes chamados `connect_button*` para clicar no botão
-`Conectar`. Se a imagem não for encontrada na tela, ele usa os fallbacks de `Enter` e
-clique por coordenada.
 
 Inicie em modo desenvolvimento:
 
